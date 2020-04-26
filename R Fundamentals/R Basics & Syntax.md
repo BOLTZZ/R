@@ -53,3 +53,27 @@ levels(murders$region)
 # The above prints out the levels in the factor vector of region. This prints out 4 leveles (Northeast, South, West, and North Central).
 ```
 * Factor vectors can be a source of confusion because they can look like character vectors. Only calling the class can help decipher if its a factor or character vector.
+* Vectors can be created with c which stands for concatenate. 
+```r
+people = c("David", "Jacob", "Reyes")
+# Creates a character vector up above.
+ages = c(38, 15, 60)
+# Creates a second numeric vector up above.
+names(ages) <- people
+# The names() function helps assign character names to each item of a vector.
+# In this case, each age is assinged a person name.
+# Output:
+# David  Jacob  Reyes
+# 38      15     60
+```
+* Square brackets [] help access elements of a vector (kinda like accessing array elements in Java and list elements in Python). This is called subsetting.
+```r
+ages[2]
+# Output:
+# Jacob
+# 15
+ages[1, 3] # This returns 1st and 3rd element.
+# Output:
+# David  Reyes
+#  38     60
+```
