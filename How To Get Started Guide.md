@@ -1,7 +1,7 @@
 # What Do I Need?
 You need the following items:
 * A desktop or laptop.
-* You need to install the [RStudio IDE](https://rstudio.com/products/rstudio/) here.
+* You need to install the [RStudio IDE](https://rstudio.com/products/rstudio/) here. [Cheatsheets](https://rstudio.com/resources/cheatsheets/).
 * Make sure to install [R](https://cran.r-project.org/).
 # What does this repository cover?
 This repository covers most of the basics of R and includes projects created by me. Though, this repository doesn't cover everything in R, to learn much more about R you should check out the following resources:
