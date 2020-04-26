@@ -1,4 +1,4 @@
-*Note: The code can be written into the R console in the RStudio.*
+*Note: The code can be written into the R console in the RStudio. Or written as a script.*
 # Objects:
 ```r
 a <- 2 # Objects can be defined using <- or =.
@@ -26,7 +26,7 @@ Data frames:
 * Data frames can be though of as tables, rows represent observations and columns represent variables.
 * The str(object) function is really useful for data.frame objects. It stands for structure of an object and gives a lot of in depth info. about a certain object.
 * The head(object) function helps get information about the first 6 rows of a data.frame object.
-* The dollar sign ($) is an accessor that gives all the data points of a certain variable (column). Also, square brackets can be used to do the same thing (data.frame object[[variable]]).
+* The dollar sign ($) is an accessor that gives all the data points of a certain variable (column). Also, square brackets can be used to do the same thing (data.frame object[["variable"]]).
 This can be done by:
 ```r
 Syntax:
