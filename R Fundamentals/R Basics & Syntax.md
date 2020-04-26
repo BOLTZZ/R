@@ -76,4 +76,9 @@ ages[1, 3] # This returns 1st and 3rd element.
 # Output:
 # David  Reyes
 #  38     60
+# Subsetting can, also, be done for characters/strings.
+ages["David"]
+# Output
+# David
+# 38
 ```
