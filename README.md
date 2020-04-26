@@ -1,7 +1,7 @@
 # R
 Hi, my name is Ojas and you've found my R repository. Check out my [How To Get Started Guide](https://github.com/BOLTZZ/R/blob/master/How%20To%20Get%20Started%20Guide.md) to get R and RStudio on your system. Check out some of my projects [here]().
 # What Is R Used For?
-R is a statistical programming language used for a wide array of things in statistics. Its prominently used in data science, too.
+R is a statistical programming language used for a wide array of things in statistics. Also, it was created to for data analysis and is prominently used in data science. R is an interactive enviroment for data analysis.  
 # Check out my repos. on programming languages:
 1. [Java](https://github.com/BOLTZZ/Java)
 
