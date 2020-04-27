@@ -14,9 +14,9 @@ ls()
 help("function_name")
 # The above helps pull up the documentation of the funciont_name function.
 ```
-* Seq() is a pretty important function. It creates a sequence of numbers with a starting/ending value and an increment amount (the default is 1).
+* Seq() is a pretty important function. It creates a sequence of numbers with a starting/maximum value and an increment amount (the default is 1).
 ```r
-seq(starting_number, ending_number, increment_amount) #The default increment_amount is 1.
+seq(starting_number, maximum_number, increment_amount) #The default increment_amount is 1.
 x = seq(1, 100, 2)
 print(x)
 # This prints out a sequence of odd numbers from 1 to 100.
