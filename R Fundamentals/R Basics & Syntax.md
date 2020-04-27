@@ -20,6 +20,10 @@ seq(starting_number, maximum_number, increment_amount) #The default increment_am
 x = seq(1, 100, 2)
 print(x)
 # This prints out a sequence of odd numbers from 1 to 100.
+# There is another argument called length.out that changes the increment amount so the amount of numbers from the start number to the end number equal the value of lenght.out.
+x = seq(0, 100, length.out = 5) #length.out = 5 so there will be 5 numbers from start to finish with the same increment.
+print(x)
+# This prints out: 0, 25, 50, 75, 100. As you can see there are 5 numbers with a constant increment amount of 25.
 ```
 # Datatypes:
 ```r
