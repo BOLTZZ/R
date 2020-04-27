@@ -82,3 +82,16 @@ ages["David"]
 # David
 # 38
 ```
+* Vector coercien is when R tries to guess the dataypes.
+```r
+ages <- c(38, "Jacob", 60)
+# Up above, R coerces the dataype of ages vector to character instead of numeric because "Jacob" is in the vector. And, an error is not thrown.
+```
+# Casting:
+* as.character() turns a different dataype into characters.
+* as.numeric() turns a different dataype into numbers.
+```r
+x <- 1:5
+y <- as.character(x)
+# Casts x into a character datatype.
+```
