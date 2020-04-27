@@ -72,6 +72,10 @@ ages[2]
 # Output:
 # Jacob
 # 15
+ages[1:3]
+# Output:
+# David  Jacob  Reyes
+#  38     15     60
 ages[1, 3] # This returns 1st and 3rd element. It can, also, be written as: ages[c(1, 3)]
 # Output:
 # David  Reyes
