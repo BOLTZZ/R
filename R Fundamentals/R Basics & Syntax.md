@@ -56,7 +56,14 @@ pop = murders$population
 length(pop)
 # Calling the length of an object returns how many values it has. Since, pop is a vector it will return a number larger than 1. Though, technically, vectors with length 1 are still considered to be vectors.
 ```
-* Vectors have datatypes so there are numeric vectors (numbers), character vectors (""), logical vectors (true/false(boolean)), factor vectors, and more.
+* Vectors have datatypes so there are numeric vectors (numbers), character vectors (""), logical vectors (true/false(boolean)), factor vectors, integer vectors (they can be made by adding a L to the end), and a few mor.
+* Integer vectors and numerical vectors can be used interchangeably and in arithmetic operatons. The only difference is integers take up less space than numerics which can come to be important in large computations.
+```r
+integer_vector = c(3L, 4L, 5L)
+# An integer vector.
+difference = 10L - 3
+# The value of difference is 7.
+```
 * Factor vectors store categorial data like regions of the U.S. (Northeast, South, and etc).
 ```r
 levels(murders$region)
