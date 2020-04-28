@@ -25,7 +25,7 @@ x = seq(0, 100, length.out = 5) #length.out = 5 so there will be 5 numbers from 
 print(x)
 # This prints out: 0, 25, 50, 75, 100. As you can see there are 5 numbers with a constant increment amount of 25.
 ```
-* There a few important functions for manipulating vectors:
+There a few important functions for manipulating vectors:
 ```r
 x = c(1, 4, 3, 10, 5)
 # The order function returns an index of what was the prev. positon of numbers and what they were moved to, once ordered.
@@ -50,6 +50,21 @@ smallest_index = which.min(x)
 # smallest_index = 1
 largest_index = which.max(x)
 # largest_index = 4
+```
+Locating certain indexes in vectors:
+```r
+# The function which() gives the entries of a logical vector that are true:
+index_of_oregon = which(murders$state == "Oregon")
+Syntax:
+index = which(logical_vector)
+# The function math() looks for similar entries in two vectors and returns the indexes on where to find them;
+ny_and_ca = match(c("New York", "California"), murders$state)
+Syntax:
+index = match(vector_1, vector_2)
+# %in% function to see if each element of the first vector is in the second vector.
+a = c(1, 5, 4)
+b = c(1, 10, 12)
+a%in%b
 ```
 # Datatypes:
 ```r
