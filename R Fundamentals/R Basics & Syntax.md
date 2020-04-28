@@ -145,3 +145,38 @@ x <- 1:5
 y <- as.character(x)
 # Casts x into a character datatype.
 ```
+# Logical Operators:
+<table>
+<colgroup span = "4"></colgroup>
+<thead>
+  <tr>
+     <th colspan = "4" scope = "colgroup">Logical Operator Comparision</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>Operator:</td>
+    <td><a href = "https://github.com/BOLTZZ/Python">Python:</a></td>
+    <td><a href = "https://github.com/BOLTZZ/Java">Java:</a></td>
+    <td><a href = "https://github.com/BOLTZZ/R">R:</a></td>
+  </tr>
+  <tr>
+    <td>NOT</td>
+    <td>not</td>
+    <td>!</td>
+    <td>!</td>
+  </tr>
+  <tr>
+    <td>OR</td>
+    <td>or</td>
+    <td>||</td>
+    <td>|</td>
+  </tr>
+  <tr>
+    <td>AND</td>
+    <td>and</td>
+    <td>&&</td>
+    <td>&</td>
+  </tr>
+</tbody>
+</table>
