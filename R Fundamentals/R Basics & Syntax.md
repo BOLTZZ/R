@@ -47,6 +47,9 @@ murders$population
 # To figure out what variables (columns) a certain data.frame object has class str(data.frame object). Or names(data.frame object) can be used to get the names of the columns of a data.frame object.
 str(murders)
 names(murders)
+# Also, data.frame objects can be created. 
+Syntax:
+data.frame_object_name = (column_name = vector, another_column = another_vector, and so on..)
 ```
 # Vectors:
 * Vectors are objects with many values. Usually, the dollar sign accessor returns a vector because that variable which is being accessed most likely has many data points. 
