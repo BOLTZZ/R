@@ -40,6 +40,16 @@ sort(x)
 ranked = rank(x)
 #     x  = [1, 3, 4, 10, 5]
 # ranked = [1, 2, 3, 5, 4]. As you can see, the ranked vector shows the position the items in x need to go to.
+# The min and max functions find the smallest and largest values in the vector.
+smallest = min(x)
+# smallest = 1
+largest = max(x)
+# largest = 10
+# The which.min and which.max functions locate the index of the smalles and largets values in the vector.
+smallest_index = which.min(x)
+# smallest_index = 1
+largest_index = which.max(x)
+# largest_index = 4
 ```
 # Datatypes:
 ```r
