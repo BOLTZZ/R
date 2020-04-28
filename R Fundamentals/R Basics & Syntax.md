@@ -49,7 +49,7 @@ str(murders)
 names(murders)
 # Also, data.frame objects can be created. 
 Syntax:
-data.frame_object_name = (column_name = vector, another_column = another_vector, and so on..)
+data.frame_object_name = data.frame(column_name = vector, another_column = another_vector, and so on..)
 ```
 # Vectors:
 * Vectors are objects with many values. Usually, the dollar sign accessor returns a vector because that variable which is being accessed most likely has many data points. 
