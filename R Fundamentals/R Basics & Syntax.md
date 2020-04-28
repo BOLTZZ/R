@@ -25,6 +25,22 @@ x = seq(0, 100, length.out = 5) #length.out = 5 so there will be 5 numbers from 
 print(x)
 # This prints out: 0, 25, 50, 75, 100. As you can see there are 5 numbers with a constant increment amount of 25.
 ```
+* There a few important functions for manipulating vectors:
+```r
+x = c(1, 4, 3, 10, 5)
+# The order function returns an index of what was the prev. positon of numbers and what they were moved to, once ordered.
+index = order(x)
+# For example, index = [1, 3, 2, 5, 4]. Compare this to x and you can see that the third number (3) of x was moved to the 2nd position 
+# of index since its the 2nd smallest number.
+# order can be useful to get the new position of vector elements.
+# The sort function sorts the vector
+sort(x)
+# This results in x looking like this: x = [1, 3, 4, 5, 10]
+# The rank function is similar to order but it matches up with the values in x.
+ranked = rank(x)
+#     x  = [1, 3, 4, 10, 5]
+# ranked = [1, 2, 3, 5, 4]. As you can see, the ranked vector shows the position the items in x need to go to.
+```
 # Datatypes:
 ```r
 a = 2
