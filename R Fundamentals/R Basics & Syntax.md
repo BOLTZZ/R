@@ -40,6 +40,7 @@ sort(x)
 ranked = rank(x)
 #     x  = [1, 3, 4, 10, 5]
 # ranked = [1, 2, 3, 5, 4]. As you can see, the ranked vector shows the position the items in x need to go to.
+# NOTE: rank(x) orders the numbers from low to high but rank(-x) orders it from high to low.
 # The min and max functions find the smallest and largest values in the vector.
 smallest = min(x)
 # smallest = 1
