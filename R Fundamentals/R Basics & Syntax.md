@@ -86,6 +86,16 @@ y = 3
 ifelse(x > y, print("x is greater than y"), print("y is greater than x"))
 # This ifelse line is really important because it works on vectors, element for element.
 ```
+Any and all functions:
+```r
+# The any() function takes in logicals and returns TRUE if any of the elements are TRUE:
+logical_vector = c("FALSE", "FALSE", "TRUE", "FALSE")
+any(logical_vector)
+# any() returns TRUE because of that one TRUE.
+# The all() function takes in logicals and returns TRUE only if all the elements are TRUE:
+all(logical_vector)
+# all() returns FALSE because of the 3 FALSE elements.
+```
 # Datatypes:
 ```r
 a = 2
