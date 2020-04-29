@@ -84,6 +84,7 @@ ifelse(boolean_condition, return_this_if_true, return_this_if_true)
 x = 5
 y = 3
 ifelse(x > y, print("x is greater than y"), print("y is greater than x"))
+# This ifelse line is really important because it works on vectors, element for element.
 ```
 # Datatypes:
 ```r
