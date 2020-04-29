@@ -96,6 +96,15 @@ any(logical_vector)
 all(logical_vector)
 # all() returns FALSE because of the 3 FALSE elements.
 ```
+Creating and defining function syntax:
+```r
+function_name = function(input){
+  # Code:
+  input_10 = input * 10
+  # Note: R returns the last statement in the function unless there is a return statement:
+  return(input_10)
+}
+```
 # Datatypes:
 ```r
 a = 2
