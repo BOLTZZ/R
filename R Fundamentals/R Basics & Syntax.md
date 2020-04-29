@@ -196,3 +196,14 @@ y <- as.character(x)
   </tr>
 </tbody>
 </table>
+Another operator is the pipe operator (%>%):
+```r
+# The pipe operator can help write less code
+my_states = filter(murders, region %in% c("Northeast", "West") & rate < 1) 
+select(my_states, state, rate, rank)
+# For example, up above I need 2 lines to create a data.frame object that only contains states that are in the Northeast or West and 
+# have a murder rate less than 1. Then, using the select() function I only print out the state name, murder rate, and rank.
+# But, down below I do the same exact thing only in 1 line because of the pipe operator:
+filter(murders, region %in% c("Northeast", "West") & rate < 1) %>% select(state, rate, rank)
+# The pipe operator takes in the previous function's return value/object as the inputted value/object, allowing this to work.
+```
