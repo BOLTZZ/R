@@ -12,7 +12,7 @@ ls()
 # Functions:
 ```r
 help("function_name")
-# The above helps pull up the documentation of the funciont_name function.
+# The above helps pull up the documentation of the function_name function.
 ```
 Seq() is a pretty important function. It creates a sequence of numbers with a starting/maximum value and an increment amount (the default is 1).
 ```r
@@ -77,6 +77,13 @@ plot(x, y)
 hist(murders$rate)
 # boxplots of murder rates by region
 boxplot(rate~region, data = murders)
+```
+If/else conditional in 1 line:
+```r
+ifelse(boolean_condition, return_this_if_true, return_this_if_true)
+x = 5
+y = 3
+ifelse(x > y, print("x is greater than y"), print("y is greater than x"))
 ```
 # Datatypes:
 ```r
