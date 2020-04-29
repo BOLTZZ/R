@@ -14,7 +14,7 @@ ls()
 help("function_name")
 # The above helps pull up the documentation of the funciont_name function.
 ```
-* Seq() is a pretty important function. It creates a sequence of numbers with a starting/maximum value and an increment amount (the default is 1).
+Seq() is a pretty important function. It creates a sequence of numbers with a starting/maximum value and an increment amount (the default is 1).
 ```r
 seq(starting_number, maximum_number, increment_amount) #The default increment_amount is 1.
 x = seq(1, 100, 2)
@@ -66,6 +66,13 @@ index = match(vector_1, vector_2)
 a = c(1, 5, 4)
 b = c(1, 10, 12)
 a%in%b
+```
+Plot() is another important function, since you can plot data:
+```r
+# a simple scatterplot of total murders versus population
+x <- murders$population /10^6
+y <- murders$total
+plot(x, y)
 ```
 # Datatypes:
 ```r
