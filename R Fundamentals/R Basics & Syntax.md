@@ -208,6 +208,7 @@ y <- as.character(x)
 </tbody>
 </table>
 Another operator is the pipe operator (%>%):
+
 ```r
 # The pipe operator can help write less code
 my_states = filter(murders, region %in% c("Northeast", "West") & rate < 1) 
