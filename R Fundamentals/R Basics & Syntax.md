@@ -98,7 +98,7 @@ all(logical_vector)
 ```
 Creating and defining function syntax:
 ```r
-function_name = function(input){
+function_name = function(input, another_input_if_u_want){
   # Code:
   input_10 = input * 10
   # Note: R returns the last statement in the function unless there is a return statement:
