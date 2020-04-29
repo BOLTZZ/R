@@ -67,12 +67,16 @@ a = c(1, 5, 4)
 b = c(1, 10, 12)
 a%in%b
 ```
-Plot() is another important function, since you can plot data:
+Ploting data is very important for data visualization (the functions below are only a small fraction on how to plot data):
 ```r
 # a simple scatterplot of total murders versus population
 x <- murders$population /10^6
 y <- murders$total
 plot(x, y)
+# a histogram of murder rates
+hist(murders$rate)
+# boxplots of murder rates by region
+boxplot(rate~region, data = murders)
 ```
 # Datatypes:
 ```r
