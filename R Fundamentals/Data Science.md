@@ -56,7 +56,7 @@ qnorm(0.025)  ≈−1.96
 # qnorm() and pnorm() are inverse functions:
 pnorm(qnorm(0.025))  =0.025
 ```
-Plotting theoretical quantiles and observed quantiles (QQ plot):
+* Plotting theoretical quantiles and observed quantiles (QQ plot):
 ```r
 data(heights)
 index <- heights$sex=="Male"
@@ -75,3 +75,4 @@ theoretical_quantiles <- qnorm(p)
 plot(theoretical_quantiles, observed_quantiles)
 abline(0,1)
 ```
+* Sometimes normal distribution doesn't fit the data so we can't give a 2 number summary of the mean/median ± standard deviation. So we can give a 5 number summary (max., min., L.Q., U.Q., and median) using a boxplot. 
