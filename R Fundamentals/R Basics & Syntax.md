@@ -246,3 +246,13 @@ select(my_states, state, rate, rank)
 filter(murders, region %in% c("Northeast", "West") & rate < 1) %>% select(state, rate, rank)
 # The pipe operator takes in the previous function's return value/object as the inputted value/object, allowing this to work.
 ```
+# Import data Gathering Functions:
+```r
+data(heights)
+x = heights$height
+mean(x) # Finds the mean.
+median(x) # Finds the median.
+sd(x) # Finds the standard deviation (SD).
+mad(x) # Finds the median absolute deviation (MAD).
+# MAD is a robust summary because it's much more resistant to errors inputted by the person entering the data than SD or mean.
+```
