@@ -38,6 +38,7 @@ Quantiles, Percentiles, and Quartiles:
 quantile(data, q)
 # All percentiles of the set below:
 p = seq(0.01, 0.99, 0.01)
+# The above gets all the percentiles because of seq()'s syntax = seq(first_value, last_value, increment)
 percentiles = quantile(data, p)
 # Finding quartiles (we can use the percentiles up above):
 percentiles[names(percentiles) == "25%"]
