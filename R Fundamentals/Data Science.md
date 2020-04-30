@@ -58,6 +58,9 @@ pnorm(qnorm(0.025))  =0.025
 ```
 Plotting theoretical quantiles and observed quantiles (QQ plot):
 ```r
+data(heights)
+index <- heights$sex=="Male"
+x <- heights$height[index]
 # calculate observed and theoretical quantiles:
 p <- seq(0.05, 0.95, 0.05)
 observed_quantiles <- quantile(x, p)
