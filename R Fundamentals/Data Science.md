@@ -85,3 +85,17 @@ Few Components of a Graph:
 3. Aesthetic mappings - What are both axes (x and y) used to represent? What is text used for? If the graph contains a legend or differentiated colors, what are they used to represent?
 4. Scale - Is the data scaled down, if so, by what factor (log, 2, etc)? Does the data all fit on both axes?
 5. Labels, style, title, legend, and more.
+For a good example of a graph click [here](https://github.com/BOLTZZ/R/blob/master/R%20Projects/Murders%20Graph.md)
+The gridExtra pacakage can be used to arrange a lot of graphs next to each other:
+```r
+library(ggplot2)
+# Note ggplot2 package makes it so plots can be saved as packages.
+# define different plots
+p <- heights %>% filter(sex == "Male") %>% ggplot(aes(x = height))
+p1 <- p + geom_histogram(binwidth = 1, fill = "blue", col = "black")
+p2 <- p + geom_histogram(binwidth = 2, fill = "blue", col = "black")
+p3 <- p + geom_histogram(binwidth = 3, fill = "blue", col = "black")
+# arrange plots next to each other in 1 row, 3 columns
+library(gridExtra)
+grid.arrange(p1, p2, p3, ncol = 3)
+```
