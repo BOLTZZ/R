@@ -79,3 +79,9 @@ abline(0,1)
 ```
 * Sometimes normal distribution doesn't fit the data so we can't give a 2 number summary of the mean/median ± standard deviation using a QQ plot or a smooth density plot. So we can give a 5 number summary (max., min., L.Q., U.Q., and median) using a boxplot. Or, we can just use a histogram.
 * Using explatory data analysis (plots/graphs) we can find errors by finding unusual outliers.
+Few Components of a Graph:
+1. Data - What data the graph contains.
+2. Geometry - What type of graph is it? Scatterplot, histogram, QQ plot, bar graph?
+3. Aesthetic mappings - What are both axes (x and y) used to represent? What is text used for? If the graph contains a legend or differentiated colors, what are they used to represent?
+4. Scale - Is the data scaled down, if so, by what factor (log, 2, etc)? Does the data all fit on both axes?
+5. Labels, style, title, legend, and more.
