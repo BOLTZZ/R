@@ -1,3 +1,4 @@
+*Note: Check out [data science functions](https://github.com/BOLTZZ/R/blob/master/R%20Fundamentals/R%20Basics%20&%20Syntax.md#import-data-gathering-functions) for data science related functions.*
 # Data Visualization:
 There are 3 types of data:
 1. Categorical (like male or female).
@@ -77,3 +78,4 @@ plot(theoretical_quantiles, observed_quantiles)
 abline(0,1)
 ```
 * Sometimes normal distribution doesn't fit the data so we can't give a 2 number summary of the mean/median ± standard deviation using a QQ plot or a smooth density plot. So we can give a 5 number summary (max., min., L.Q., U.Q., and median) using a boxplot. Or, we can just use a histogram.
+* Using explatory data analysis (plots/graphs) we can find errors by finding unusual outliers.
