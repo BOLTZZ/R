@@ -246,7 +246,7 @@ select(my_states, state, rate, rank)
 filter(murders, region %in% c("Northeast", "West") & rate < 1) %>% select(state, rate, rank)
 # The pipe operator takes in the previous function's return value/object as the inputted value/object, allowing this to work.
 ```
-# Import data Gathering Functions:
+# Import Data Gathering Functions:
 ```r
 data(heights)
 x = heights$height
