@@ -78,6 +78,10 @@ hist(murders$rate)
 # boxplots of murder rates by region
 boxplot(rate~region, data = murders)
 ```
+Output:
+
+![1](https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/graphs.PNG)
+
 If/else conditional in 1 line:
 ```r
 ifelse(boolean_condition, return_this_if_true, return_this_if_true)
