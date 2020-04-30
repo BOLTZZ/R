@@ -1,7 +1,8 @@
 # Murders Graph Using ggplot():
 Output:
 
-![1]()
+![1](https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/Rplot.png)
+
 Code:
 ```r
 library(tidyverse)
