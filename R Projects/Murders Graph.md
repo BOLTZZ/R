@@ -5,6 +5,8 @@ Output:
 
 Code:
 ```r
+library(dplyr)
+# Loads the dplyr package. This allows us to use the pipe operator (%>%)
 library(tidyverse)
 # Loads the tidyverse package. This will help us access ggplot().
 library(dslabs)
