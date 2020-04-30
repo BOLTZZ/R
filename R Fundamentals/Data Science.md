@@ -76,4 +76,4 @@ theoretical_quantiles <- qnorm(p)
 plot(theoretical_quantiles, observed_quantiles)
 abline(0,1)
 ```
-* Sometimes normal distribution doesn't fit the data so we can't give a 2 number summary of the mean/median ± standard deviation. So we can give a 5 number summary (max., min., L.Q., U.Q., and median) using a boxplot. 
+* Sometimes normal distribution doesn't fit the data so we can't give a 2 number summary of the mean/median ± standard deviation using a QQ plot or a smooth density plot. So we can give a 5 number summary (max., min., L.Q., U.Q., and median) using a boxplot. Or, we can just use a histogram.
