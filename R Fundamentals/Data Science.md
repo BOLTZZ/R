@@ -200,3 +200,23 @@ mutate(first_vector = reorder(first_vector, second_vector, FUN = summarization_f
 # Mutate helps reorder
 ```
 Logistic (logit) transformation for a proportion or rate p is as follows: f(p) = log(p/1-p). When p is a proportion or probability (p/1-p) is called the odds. The logit hilghits small differences like 0.1% using the odds and is useful for that.
+Visualization Principles:
+* Humans are, generally, bad at quantifying angles and areas on graphs so pie charts and donut charts wouldn't be good charts for the general audience.
+* Humans are good at measuring length (linear measures) like histograms and bar plots.
+* For bar plots, its dishonest to not start at 0 because we are implying the lengths are poportional to the quantaties being displayed. Also, bar plots are useful for showing 1 number but not for showing distribution while comparing data.
+* When using position instead of length its not nessecary to include 0. Like, dotpots, boxplots, scatterplots.
+* Don't distort quantaties like area when comparing shapes.
+* Order by meaningful values (like from greatest to least) when using position and the reorder function.
+* If you have a lot of points on your scatterplot use jitter (geom_jitter()) to slightly shift the points. Also, alpha blending (alpha = some_decimal) to make the points a little transparent.
+* When comparing data between plots keep the axes the same. Align plots vertical (facet_grid(var ~.)) to see horizontal changes and horizontal (facet_grid(.~ var)) to see vertical changes.
+* Transformations help the user understand the axes better. The log transformation is useful for data with multiplicative changes. The logistic transformation is useful for fold changes in odds. The square root transformation is useful for count data.
+* For comparing data use visual clues like color (use a color blind friendly pallete for color bind people), position (next to each other), and more.
+* Scatterplots are, generally, the best plot when comparing 2 variables (like infant mortality and income). But, for comparing a variable at the same type but at different timepoints (life expectancy at 2010 and 2015) use a slope chart. Currently, ggplot has no prebuilt function for a slope chart but you can make it on your own. But, if their are too many points slope chart won't work. Use the Bland-Altman plot (Tukey mean difference plot, MA plot) graphs the difference between conditions on the y-axis and the mean between conditions on the x-axis. It is more appropriate for large numbers of observations than slope charts.
+* We can use the shape argument to control a 3rd variable using different shapes.
+* Sequential colors can be used to represent a variable (RColorBrewer package), they go from high to low. Meanwhile, divergent colors diverge from the center, high and low have equal emphasis.
+* AVOID pseudo and gratuitous 3D plots! Use 2D plots, much easier to understand for the general audience. Like 3D bar plots literally add nothing and some pseudo 3D plots just confused the audience.
+* AVOID too many significant digits in tables! Use a low number of sig figs:
+```r
+options(digits = 3)
+# Globally defines all numbers to have 3 sig figs.
+```
