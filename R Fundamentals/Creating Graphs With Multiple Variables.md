@@ -1,4 +1,4 @@
-*Note check [R Projects](https://github.com/BOLTZZ/R/tree/master/R%20Projects) for some good graphs.*
+*Note: Check [R Projects](https://github.com/BOLTZZ/R/tree/master/R%20Projects) for some good example graphs.*
 # Creating Graphs With Multiple Variables:
 Dataset = Titanic.
 Variables (Columns) = Age, Sex, Survived, Fare
