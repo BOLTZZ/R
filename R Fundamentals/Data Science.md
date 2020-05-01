@@ -135,8 +135,12 @@ average = mean(murders$rate, na.rm = TRUE)
 # Removes any possible NAs from the calculations.
 ```
 Different Ways to Compare Data:
+* The geom_density() can be used to create a smooth density plot.
+
 Faceting:
+
 Facting - Stratifying the data by some variable and then making a plot for each variable.
+
 The facet_grid() function takes in variable(s) and adds a new layer whilst plotting the strata(s).
 ```r
 filter(gapminder, year %in% c(1962, 2012)) %>%
@@ -149,8 +153,11 @@ filter(gapminder, year %in% c(1962, 2012)) %>%
 # Keeping the scales (x and y axis) the same between facets helps compare.
 ```
 Time-Series Plots:
+
 Time-series plots - Have time on the x axis and series on the y-axis.
+
 * geom_line() can be used to connect points and create a smooth line.
+
 * When 2 or more variables exist on the graph and geom_line() is called just use, "group = variable" in the mapping:
 ```r
 countries <- c("South Korea", "Germany")
@@ -178,6 +185,7 @@ scale_x_continous(trans = "logN")
 scale_y_continous(trans = "logN")
 ```
 Boxplots:
+
 * When there are many boxplots in the same graph the x-axis titles can get messed up so use hjust = 1 so the names on the x-axis can be rotated:
 ```r
 p + geom_boxplot() +
