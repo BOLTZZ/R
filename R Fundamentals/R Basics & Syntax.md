@@ -265,4 +265,11 @@ median(x) # Finds the median.
 sd(x) # Finds the standard deviation (SD).
 mad(x) # Finds the median absolute deviation (MAD).
 # MAD is a robust summary because it's much more resistant to errors inputted by the person entering the data than SD or mean.
+sample(vector, num_of_items_to_pick) # Finds a random item(s), based on the value of num_of_items_to_pick, from the vector.
+replicate(num_of_times_to_be_repeated, function_to_be_repeated) # This can emulate a Monte Carlo simulation. Set num_of_times_to_be_repeated to a very high number (10,000). Also, function_to_be_repeated is usually sample().
+paste(vector_1, vector_2) # Paste concatenates vectors or characters together.
+expand.grid(pants = c("blue", "black"), shirts = c("white", "grey", "plaid")) # Gives combinations for 2 vectors.
+permutations(n, r, dataset) # lists the different ways that r items can be selected from a set of n options when order matters.
+combinations(n, r, datset) # lists the different ways that r items can be selected from a set of n options when order does not matter.
+sapply(vector, operation_or_function) # sapply allows element-wise operations/functions on vectors.
 ```
