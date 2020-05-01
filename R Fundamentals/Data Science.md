@@ -147,8 +147,11 @@ filter(gapminder, year %in% c(1962, 2012)) %>%
     ggplot(aes(fertility, life_expectancy, col = continent)) +
     geom_point() +
     facet_grid(continent ~ year)
-# The facet_grid() takes in 2 variables (continent and year) seperated by a ~.
-# facet_grid(continet ~ year) can be changed to facet_grid(. ~ year) to only see the year variable.
+# The facet_grid() takes in 2 variables (continent and year) seperated by a ~
+facet_grid(var ~.)
+# The above puts the graphs vertically next to each other.
+facet_grid(.~var)
+# The above puts the graphs horizontally next to each other.
 # The facet_wrap() function allows you to seperate the plots in either columns or rows.
 # Keeping the scales (x and y axis) the same between facets helps compare.
 ```
