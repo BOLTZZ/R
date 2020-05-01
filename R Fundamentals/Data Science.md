@@ -37,6 +37,8 @@ Quantiles, Percentiles, and Quartiles:
 ```r
 # Quantile with qth quantile of data:
 quantile(data, q)
+# Getting min, median, and max using quantiles:
+quantile(data, c(0, 0.5, 1))
 # All percentiles of the set below:
 p = seq(0.01, 0.99, 0.01)
 # The above gets all the percentiles because of seq()'s syntax = seq(first_value, last_value, increment)
@@ -99,3 +101,91 @@ p3 <- p + geom_histogram(binwidth = 3, fill = "blue", col = "black")
 library(gridExtra)
 grid.arrange(p1, p2, p3, ncol = 3)
 ```
+dplyr/tidyvers functions:
+```r
+# The summarize function creates a data frame with inputted columns:
+s = heights %>% filter(sex == "Male") %>% summarize(average = mean(height), standard_deviation = sd(height))
+# Access average and standard deviation from summary table:
+s$average
+s$standard_deviation
+# The dot and %>% can be used to get a certain column of a data frame:
+data_frame %>% .column1
+rate = us_murder_rate %>% .$rate
+# The group_by() helps divide data into groups them compute summaries for each group.
+heights %>%
+    group_by(sex) %>%
+    summarize(average = mean(height), standard_deviation = sd(height))
+# This summarizes the mean and sd for each sex.
+# The arrrange() can sort data depending on a certain value:
+murders %>% arrange(population)
+# The code above sorts the murders dataset based on population (lowest to highest).
+murders %>% arrange(desc(population))
+# This sorts it from highest to lowest.
+# arrange() can, also, be nested:
+murders %>% arrange(region, murder_rate)
+# This orders it by region then by murder rate.
+# To see the top something of a dataset use the top_n() function.
+dataset $>$ top_n(max_number, column)
+murders %>% top_n(10, murder_rate)
+# Finds the top 10 states based on murder rate (this is UNORDERED).
+murders %>% arrange(desc(murder_rate)) %>% top_n(10)
+# The above orders it using arrange().
+# Another important function is na.rm(). na.rm() removes any NAs and is useful when operating on datasets with NAs
+average = mean(murders$rate, na.rm = TRUE)
+# Removes any possible NAs from the calculations.
+```
+Different Ways to Compare Data:
+Faceting:
+Facting - Stratifying the data by some variable and then making a plot for each variable.
+The facet_grid() function takes in variable(s) and adds a new layer whilst plotting the strata(s).
+```r
+filter(gapminder, year %in% c(1962, 2012)) %>%
+    ggplot(aes(fertility, life_expectancy, col = continent)) +
+    geom_point() +
+    facet_grid(continent ~ year)
+# The facet_grid() takes in 2 variables (continent and year) seperated by a ~.
+# facet_grid(continet ~ year) can be changed to facet_grid(. ~ year) to only see the year variable.
+# The facet_wrap() function allows you to seperate the plots in either columns or rows.
+# Keeping the scales (x and y axis) the same between facets helps compare.
+```
+Time-Series Plots:
+Time-series plots - Have time on the x axis and series on the y-axis.
+* geom_line() can be used to connect points and create a smooth line.
+* When 2 or more variables exist on the graph and geom_line() is called just use, "group = variable" in the mapping:
+```r
+countries <- c("South Korea", "Germany")
+gapminder %>% filter(country %in% countries) %>%
+    ggplot(aes(year, fertility, col = country)) +
+    geom_line()
+# Each line is colored differently
+labels <- data.frame(country = countries, x = c(1975, 1965), y = c(60, 72))
+gapminder %>% filter(country %in% countries) %>%
+    ggplot(aes(year, life_expectancy, col = country)) +
+    geom_line() +
+    geom_text(data = labels, aes(x, y, label = country), size = 5) +
+    theme(legend.position = "none")
+# The above is a life expectancy plot without a legend but instead titles over each line.
+```
+Transformations:
+* Log transformations help convert mulitplicative changes into additive changes.
+* Most common logs are log2, log10, and the natural log (though this is hard to compute for humans).
+* You can divide an axis (usally the x-axis) by logN to lower the numbers lined on the x-axis and make them smaller.
+* For population size, log10 seems the best because population size numbers are, generally, very large.
+* Choosing binwidths for histograms and smooth density plots becomes challenging as we convert the numbers based on logN.
+* Scaling based on logN:
+```r
+scale_x_continous(trans = "logN")
+scale_y_continous(trans = "logN")
+```
+Boxplots:
+* When there are many boxplots in the same graph the x-axis titles can get messed up so use hjust = 1 so the names on the x-axis can be rotated:
+```r
+p + geom_boxplot() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+* We can use the reorder() function to reorder box plots based on meaningful values:
+```r
+mutate(first_vector = reorder(first_vector, second_vector, FUN = summarization_function))
+# Mutate helps reorder
+```
+Logistic (logit) transformation for a proportion or rate p is as follows: f(p) = log(p/1-p). When p is a proportion or probability (p/1-p) is called the odds. The logit hilghits small differences like 0.1% using the odds and is useful for that.
