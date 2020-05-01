@@ -77,6 +77,12 @@ plot(x, y)
 hist(murders$rate)
 # boxplots of murder rates by region
 boxplot(rate~region, data = murders)
+# Another box plot:
+library(dplyr)
+library(ggplot2)
+library(dslabs)
+data("murders")
+murders %>% mutate(rate = total/population*100000, region = reorder(region, rate, FUN = median)) %>% group_by(region) %>% ggplot(aes(region, rate)) + geom_boxplot() + geom_point()
 ```
 Output:
 
