@@ -272,4 +272,8 @@ expand.grid(pants = c("blue", "black"), shirts = c("white", "grey", "plaid")) # 
 permutations(n, r, dataset) # lists the different ways that r items can be selected from a set of n options when order matters.
 combinations(n, r, datset) # lists the different ways that r items can be selected from a set of n options when order does not matter.
 sapply(vector, operation_or_function) # sapply allows element-wise operations/functions on vectors.
+# The quantile for normal distribution in R is qnorm():
+qnorm(quantile, avg, sd) # returns the data at that quantile.
+# Example (male heights at 99th percentile):
+99th_percentile = qnorm(0.99, mean(x), sd(x))
 ```
