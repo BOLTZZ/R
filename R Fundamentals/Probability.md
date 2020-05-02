@@ -50,4 +50,57 @@ celtic_wins <- replicate(10000, {
 })
 ```
 Addition rule - The addition rule is the probability of A or B:
+
 Pr(A or B) = Pr(A) + Pr(B) − Pr(A and B)
+
+Continous Probability:
+* The cumulative distribution function (CDF) is standard for assiging intervals for continous probability. The CDF is a distribution function for continuous data x that reports the proportion of the data below a for all values of a:
+
+F(a) = Pr(x≤a)
+
+* An example CDF:
+```r
+F <- function(a) mean(x <= a)
+1 - F(70)    # probability of male taller than 70 inches
+# Another way to create this is using pnorm():
+avg = mean(x)
+standard_deviation = sd(x)
+pnorm(70, avg, standard_deviation) # probability of a male shorter than 70 inches.
+```
+* The cumulative distribution for normal distribution data in R is pnorm():
+```r
+F(a) = pnorm(a, avg, sd)
+# A random quantity is normall distributed with an average of avg and standard deviation of sd.
+# So we can use the above equation for normally distributed data like height.
+# NOTE: pnorm() is only for continous data.
+```
+* The quantile for normal distribution in R is qnorm():
+```r
+qnorm(quantile, avg, sd) # returns the data at that quantile.
+# Example (male heights at 99th percentile):
+99th_percentile = qnorm(0.99, mean(x), sd(x))
+```
+Probability Density:
+* An integral can be thought of as the area under the curve up to the value of a gives you the probability of x being less than or equal to the value of a.
+* The probability density  f(x)  is defined such that the integral of  f(x)  over a range gives the CDF of that range:
+
+F(a)=Pr(X≤a)=∫a−∞f(x)dx
+
+* The probability density function of a normal distribution is given by dnorm(). Also, pnorm() gives the distribution function, which is the integral of the density function.  
+```r
+dnorm(z) # gives the probability density f(z) of a certain z-score
+dnorm(z, mu, sigma)
+```
+* rnorm(n, avg, s) generates n random numbers from the normal distribution with average avg and standard deviation s. This allows us to create data that mimics normal distribution.
+* rnorm() allows us to simulate Monte Carlo simulations:
+```r
+B <- 10000
+tallest <- replicate(B, {
+    simulated_data <- rnorm(800, avg, s)    # generate 800 normally distributed random heights
+    max(simulated_data)    # determine the tallest height
+})
+mean(tallest >= 7*12)    # proportion of times that tallest person exceeded 7 feet (84 inches)
+```
+* Other distributions are sutdent-t, chi-squared, exponential, gamma, beta, etc.
+* R provides functions for density (d), quantile (q), probability distribution (p) and random number generation (r) for many of these distributions.
+* Each distribution has a matching abbreviation (for example, norm() or t()) that is paired with the related function abbreviations (d, p, q, r) to create appropriate functions. So, this create pNORM(), dNORM(), qNORM(), and etc (sorry of the emphasis).
