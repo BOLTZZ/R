@@ -118,12 +118,12 @@ Randomness, Sampling Models, and Centeral Limit Theorem:
 * The difference between probability distribution and distribution is that any list of numbers has distribution. The probability distribution function of a random variable is defined mathematically and does not depend on a list of numbers. But, the probability distribution can be found using a list of numbers (average and standard deviation) using the CDF function.
 * Capital letters denote random variables (X) and lowercase letters denote observed values (x).
 * In the notation Pr(X=x), we are asking how frequently the random variable X is equal to the value x.
-* The Centeral Limit Theorem (CLT) states that when the independent draws (sample size) is large, the probability distribution of the sum of the independent draws is approximately normal.
-* The expected value is the average of the values in a dataset, which, in turn, represents the value of one draw. The formula for the expected value is E[X] = (summation of all values)/(count of all values). Note: the equation to the left considers that every value in the datset has an EQUAL CHANCE of being pulled. Also, expected value is denoted by E[X]
-* The equation for the expected value with 2 variables and different proprtions (UNEQUAL CHANCE) is: ap + b * (1−p). With a and b the 2 variables/values, p the proproption/chance of a, and 1-p the proportion/chance of b. Also, with n draws the equation is: n * (ap + b * (1−p)).
+* The Centeral Limit Theorem (CLT) states that when the independent draws (sample size) is large, the probability distribution of the sum of the independent draws is approximately normal. The sample size required for the Central Limit Theorem and Law of Large Numbers to apply differs based on the probability of success. If the probability of success is high, then relatively few observations are needed. As the probability of success decreases, more observations are needed. But, sometimes the probability of success can be extremley low, like winning the lottery. The formula for CLT in R is to use pnorm().
+* The expected value is the average of the values in a dataset, which, in turn, represents the value of one draw. The formula for the expected value is E[X] = (summation of all values)/(count of all values). Note: the equation to the left considers that every value in the datset has an EQUAL CHANCE of being pulled. Also, expected value is denoted by E[X].
+* The equation for the expected value with 2 variables and different proprtions (UNEQUAL CHANCE) is: ap + b * (1−p). With a and b the 2 variables/values, p the proproption/chance of a, and 1-p the proportion/chance of b. Also, with n draws the equation for the sum of n is: n * (ap + b * (1−p)). Meanwhile, for the average of n is: ap + b * (1−p)
 * The standard error (SE) gives the size of the variation around the expected value, since the expected value is basically and estimation there will be variations in each case/observation. 
 * If the draws are independent then the SE is S[X] = sqrt(number of draws) * (standard deviation of the numbers in the dataset). S[X] denotes the standard error.
-* The SE for 2 variables (a and b) with different proprotions/chance (a = p and b = 1 - p) is: ∣b–a∣ * sqrt(p * (1 - p)). And, then with n draws it's: sqrt(n) * ∣b–a∣ * sqrt(p * (1 - p)).
+* The SE for 2 variables (a and b) with different proprotions/chance (a has p and b has 1 - p) is: ∣b–a∣ * sqrt(p * (1 - p)). And, then with n draws for the sum of n it's: sqrt(n) * ∣b–a∣ * sqrt(p * (1 - p)). But, for the average of n it's: (|b-a| * sqrt(p * (1 - p)))/sqrt(n).
 
 Example code for expected value with 1 draw, n draws, standard error with 1 draw, n draws:
 ```r
@@ -147,7 +147,20 @@ X = sample(c(-1, 17), 1000, replace = TRUE, prob = c(p_not_green, p_green))
 expected_value_with_1000_draws = 1000 * ((17 * p_green) + (-1 * p_not_green))
 # Compute the standard error of the sum of 1,000 outcomes
 standard_error_with_1000_draws = sqrt(1000) * abs(17 - -1) *  sqrt(p_green * p_not_green)
+# Compute the standard error of the average of 1,000 outcomes
+standard_error_average = abs(17 - -1) *  sqrt(p_green * p_not_green)/sqrt(1000)
 ```
 Properties:
-* The expected value of the sum of random variables (the dataset) is the sum of the expected values of indivual random variables.
-* The expected value of a random variable * non-random constant is that variable's expected value * non-random constant.
+1. The expected value of the sum of random variables (the dataset) is the sum of the expected values of indivual random variables.
+2. The expected value of a random variable * non-random constant is that variable's expected value * non-random constant. E[aX] = a * E[X]
+* Because of the above 2 properties, the expected value of the average of the draws from a dataset is the expected value of the dataset.
+3. The square of the SE of the sum of the independent random variables is the sum of the square of the SE for each random variable.
+4. The SE of a random variable * non-random constant is the SE * non-random constant.
+* Because of the above 2 properties, the SE of the average independent draws from the same dataset is the standard deviation of the dataset divide by the square root of n (SE = sd(dataset)/sqrt(n))
+5. If X is a normally distributed randon variable and a and b are non-random constants then, a * X + b is also a normally distributed ranomd variable.
+
+  Law of Large Numbers or the Law of Averages:
+
+  As the number of n draws increases the SE becomes very small (since there is more data to estimate on). Once, n is very large the SE is practically 0 and the average of the draws converges to the average of the dataset.
+
+* The CLT only applies to only approximately normaly distributed datasets. Also, the number of values needed can vary to only 10 to as large as 1 million. And, the chance of succes can't be that small for the CLT (to use CLT in R use pnorm()). The Poisson distribution would be better in these cases.
