@@ -276,4 +276,6 @@ sapply(vector, operation_or_function) # sapply allows element-wise operations/fu
 qnorm(quantile, avg, sd) # returns the data at that quantile.
 # Example (male heights at 99th percentile):
 99th_percentile = qnorm(0.99, mean(x), sd(x))
+# To take a sample of n numbers:
+take_poll(n)
 ```
