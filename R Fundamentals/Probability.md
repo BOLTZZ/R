@@ -66,6 +66,8 @@ F <- function(a) mean(x <= a)
 avg = mean(x)
 standard_deviation = sd(x)
 pnorm(70, avg, standard_deviation) # probability of a male shorter than 70 inches.
+# One more way is to use the mean function.
+mean(x < 70) # Finds the probability of a male shorter than 70 inches.
 ```
 * The cumulative distribution for normal distribution data in R is pnorm():
 ```r
@@ -106,5 +108,46 @@ mean(tallest >= 7*12)    # proportion of times that tallest person exceeded 7 fe
 * Each distribution has a matching abbreviation (for example, norm() or t()) that is paired with the related function abbreviations (d, p, q, r) to create appropriate functions. So, this create pNORM(), dNORM(), qNORM(), and etc (sorry of the emphasis).
 
 Statistial Inference:
+* Statistical inference offers a framework for quantifying uncertainty due to randomness.
 
-Statistical inference offers a framework for quantifying uncertainty due to randomness.
+Randomness, Sampling Models, and Centeral Limit Theorem:
+* A sampling model models the random behavior of a process as the sampling of draws from a dataset.
+* The probability distribution of a random variable is the probability of the observed value falling in any given interval. The interval can be denoted in the CDF function (F(a) = Pr(x≤a)) as x.
+* The average of many draws of a random variable is called its expected value.
+* The standard deviation of many draws of a random variable is called its standard error.
+* The difference between probability distribution and distribution is that any list of numbers has distribution. The probability distribution function of a random variable is defined mathematically and does not depend on a list of numbers. But, the probability distribution can be found using a list of numbers (average and standard deviation) using the CDF function.
+* Capital letters denote random variables (X) and lowercase letters denote observed values (x).
+* In the notation Pr(X=x), we are asking how frequently the random variable X is equal to the value x.
+* The Centeral Limit Theorem (CLT) states that when the independent draws (sample size) is large, the probability distribution of the sum of the independent draws is approximately normal.
+* The expected value is the average of the values in a dataset, which, in turn, represents the value of one draw. The formula for the expected value is E[X] = (summation of all values)/(count of all values). Note: the equation to the left considers that every value in the datset has an EQUAL CHANCE of being pulled. Also, expected value is denoted by E[X]
+* The equation for the expected value with 2 variables and different proprtions (UNEQUAL CHANCE) is: ap + b * (1−p). With a and b the 2 variables/values, p the proproption/chance of a, and 1-p the proportion/chance of b. Also, with n draws the equation is: n * (ap + b * (1−p)).
+* The standard error (SE) gives the size of the variation around the expected value, since the expected value is basically and estimation there will be variations in each case/observation. 
+* If the draws are independent then the SE is S[X] = sqrt(number of draws) * (standard deviation of the numbers in the dataset). S[X] denotes the standard error.
+* The SE for 2 variables (a and b) with different proprotions/chance (a = p and b = 1 - p) is: ∣b–a∣ * sqrt(p * (1 - p)). And, then with n draws it's: sqrt(n) * ∣b–a∣ * sqrt(p * (1 - p)).
+
+Example code for expected value with 1 draw, n draws, standard error with 1 draw, n draws:
+```r
+# The variables 'green', 'black', and 'red' contain the number of pockets for each color
+green <- 2
+black <- 18
+red <- 18
+# Assign a variable `p_green` as the probability of the ball landing in a green pocket
+p_green <- green / (green+black+red)
+# Assign a variable `p_not_green` as the probability of the ball not landing in a green pocket
+p_not_green <- 1-p_green
+# Calculate the expected outcome if you win $17 if the ball lands on green and you lose $1 if the ball doesn't land on green
+expected_value_with_1_draw = (p_green * 17) + (-1 * p_not_green)
+# Compute the standard error of the random variable
+standard_error_with_1_draw = abs(17 - -1) * sqrt(p_green * p_not_green)
+# Define the number of bets using the variable 'n'
+n = 1000
+# Create a vector called 'X' that contains the outcomes of 1000 samples
+X = sample(c(-1, 17), 1000, replace = TRUE, prob = c(p_not_green, p_green))
+# Calculate the expected outcome of 1,000 spins if you win $17 when the ball lands on green and you lose $1 when the ball doesn't land on green
+expected_value_with_1000_draws = 1000 * ((17 * p_green) + (-1 * p_not_green))
+# Compute the standard error of the sum of 1,000 outcomes
+standard_error_with_1000_draws = sqrt(1000) * abs(17 - -1) *  sqrt(p_green * p_not_green)
+```
+Properties:
+* The expected value of the sum of random variables (the dataset) is the sum of the expected values of indivual random variables.
+* The expected value of a random variable * non-random constant is that variable's expected value * non-random constant.
