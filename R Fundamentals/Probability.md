@@ -104,3 +104,7 @@ mean(tallest >= 7*12)    # proportion of times that tallest person exceeded 7 fe
 * Other distributions are sutdent-t, chi-squared, exponential, gamma, beta, etc.
 * R provides functions for density (d), quantile (q), probability distribution (p) and random number generation (r) for many of these distributions.
 * Each distribution has a matching abbreviation (for example, norm() or t()) that is paired with the related function abbreviations (d, p, q, r) to create appropriate functions. So, this create pNORM(), dNORM(), qNORM(), and etc (sorry of the emphasis).
+
+Statistial Inference:
+
+Statistical inference offers a framework for quantifying uncertainty due to randomness.
