@@ -64,4 +64,5 @@ mean(inside)
 * We can convert the probability of seeing an observed value under the null hypothesis into a standard normal random variable. We compute the value of z that corresponds to the observed result, and then use that z to compute the p-value. Also, if a 95% confidence interval doesn't include our observed value we can conclude the p-value must be less than 0.05 because 1 - 95% = 0.05.
 * It is preferable to report confidence intervals instead of p-values, as confidence intervals give information about the size of the estimate and p-values do not.
 * To find p-values for a given z-score z in a normal distribution with mean mu and standard deviation sigma, use 2*(1-pnorm(z, mu, sigma)) instead. If the mean = 0 and s.d. = 1 of a normal distribution, use 2*(1-pnorm(2)) instead.
-* 
+Statistical Models:
+* Poll aggregators combine the results of many polls to simulate polls with a large sample size and therefore generate more precise estimates than individual polls.
