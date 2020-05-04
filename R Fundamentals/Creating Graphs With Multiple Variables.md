@@ -48,6 +48,9 @@ titanic %>%
 titanic %>%
     ggplot(aes(Sex, fill = Survived)) +
     geom_bar()
+# Make a barplot of the proportion of hits for each state
+p_hits %>% arrange(desc(proportion_hits)) %>% ggplot(aes(state, proportion_hits)) + geom_bar(stat = "identity") + coord_flip()
+# stat = "identity" makes it so that the height of the bars match their corresponding value.
 ```
 QQ plot:
 ```r
