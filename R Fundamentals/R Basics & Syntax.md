@@ -278,4 +278,8 @@ qnorm(quantile, avg, sd) # returns the data at that quantile.
 99th_percentile = qnorm(0.99, mean(x), sd(x))
 # To take a sample of n numbers:
 take_poll(n)
+# Save objects into an rda file, .RData is also fine but less preferred:
+save(murders, file = "rda/murders.rda")
+# Save plots:
+ggsave("figs/barplot.png")
 ```
