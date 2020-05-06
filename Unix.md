@@ -22,6 +22,10 @@ A few examples:
 3. Your current working directory is ~/projects/project-1/figs and you want to move to the project-2 folder in the projects directory.
   * Solution 1: cd ~/projects/project-2 (absolute)
   * Solution 2: cd ../../project-2 (relative)
+
 File System:
 
+A file system can look like this:
+
 ![1](https://courses.edx.org/assets/courseware/v1/8a874934d6c335342808150e3be7a2d0/asset-v1:HarvardX+PH125.5x+1T2020+type@asset+block/data_science_1_rev.png)
+* A filesystem is all files, folders, and programs on the computer.
