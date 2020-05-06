@@ -24,8 +24,12 @@ A few examples:
   * Solution 2: cd ../../project-2 (relative)
 
 File System:
-
+* In Unix, we don't have the visual cues of directories and the file system. Though, the following notes will still be useful.
 A file system can look like this:
 
-![1](https://courses.edx.org/assets/courseware/v1/8a874934d6c335342808150e3be7a2d0/asset-v1:HarvardX+PH125.5x+1T2020+type@asset+block/data_science_1_rev.png)
+![1](https://rafalab.github.io/dsbook/productivity/img/unix/filesystem.png)
 * A filesystem is all files, folders, and programs on the computer.
+* Folders are directories and folders in other folders are subdirectories (in the image, directory projects has 2 subdirectories, project-1 & project-2, with projects being a subdirectory of home). The home directory is your home directory (the name usually the user name). And, the root directory is where the whole filesystem originates from and is kept (the home directory is usally 2 or more levels from the root). The root directory is represented by a / in the Unix terminal.
+* The working directory is the current directory we're in. pwd (print working directory) prints the current, working directory.
+* Files (code, data, output) should be self-contained and structured.
+* It is good practice to write a README.txt file to introduce the file structure to facilitate collaboration and for your future reference.
