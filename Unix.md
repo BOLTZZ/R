@@ -90,3 +90,6 @@ Useful Unix Commands:
 | ssh  | Connect to another computer, pretty important |
 | grep | search for patterns in a file |
 | awk/sed | These are two very powerful commands that permit you to find specific strings in files and change them|
+| -l | Makes the list “long”, meaning that information other than just the filename will be provided | | 
+| -a | See “all” files, even the hidden ones | |
+| -t | Sorts the list by time, with the most recent files at the top | | 
