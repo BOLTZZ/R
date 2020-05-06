@@ -18,5 +18,7 @@ Some basic commands:
 6) git log - keeps track of all the changes we have made to the local repository
 
 Creating repos:<br>
-One way to create a repo is by using the git clone command to clone an existing repo from Github to your computer. <br>
-Another way is to finish your project on your computer. Then, create an upstream repo and call git init (to initalize) on your working directory (project) so the files will be tracked by Git. Now, just commit (or add and then commit) the files from the working directory to your local directory. Time to connect the upstream repo and local directory by "git remote add origin <upstream-rep-url>". Note: The first time you push to a new repository, you may also need to use these git push options: git push --set-upstream origin master. If you need to run these arguments but forget to do so, you will get an error with a reminder
+* One way to create a repo is by using the git clone command to clone an existing repo from Github to your computer. <br>
+* Another way is to finish your project on your computer. Then, create an upstream repo and call git init (to initalize) on your working directory (project) so the files will be tracked by Git. Now, just commit (or add and then commit) the files from the working directory to your local directory. Time to connect the upstream repo and local directory by "git remote add origin <upstream-rep-url>". Note: The first time you push to a new repository, you may also need to use these git push options: git push --set-upstream origin master. If you need to run these arguments but forget to do so, you will get an error with a reminder. <br>
+
+[Resource by Github](https://try.github.io/)
