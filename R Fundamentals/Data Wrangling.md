@@ -33,4 +33,8 @@ download.file(url, tmp_filename)
 dat <- read_csv(tmp_filename)
 file.remove(tmp_filename)
 ```
+* Also, if your file doesn't have any headers you can use the col_names = False:
+```r
+read_csv("http://mlr.cs.umass.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data", col_names = FALSE)
+```
 * R-base import functions (read.csv(), read.table(), read.delim()) generate data frames rather than tibbles and character variables are converted to factors. This can be avoided by setting the argument stringsAsFactors=FALSE.
