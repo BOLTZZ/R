@@ -44,7 +44,7 @@ read_csv("http://mlr.cs.umass.edu/ml/machine-learning-databases/breast-cancer-wi
 Reshaping Data:
 * In tidy data, each row represents an observation and each column represents a different variable.
 * In wide data, each row includes several observations and one of the variables is stored in the header:
-* Once you import data you need to reshape it for data analyzation. To reshape we use the tidyr package (in tidyverse) functions. One function is gather(), it turns wide data into tidy data. Note: the column names produced by gather are characters, this can be combated with the conver argument and setting it to TRUE. Another function is spread() and it converts tidy data to wide data:
+* Once you import data you need to reshape it for data analyzation. To reshape we use the tidyr package (in tidyverse) functions. One function is gather(), it turns wide data into tidy data. Note: the column names produced by gather are characters, this can be combated with the conver argument and setting it to TRUE. Another function is spread() and it converts tidy data to wide data. spread takes 3 arguments: (1) the data frame, (2) the key to spread across columns, and (3) the value to put in individual cells of the table.:
 ```r
 # original wide data
 library(tidyverse) 
@@ -86,7 +86,7 @@ new_tidy_data %>%
 new_wide_data <- new_tidy_data %>% spread(year, fertility) #1st arg = which variable for the column names; 2nd arg = which variable to fill out the cells.
 select(new_wide_data, country, `1960`:`1967`)
 ```
-* The separate() function splits one column into two or more columns at a specified character that separates the variables. When there is an extra separation in some of the entries, use fill="right" to pad missing values with NAs, or use extra="merge" to keep extra elements together. The unite() function combines two columns and adds a separating character:
+* The separate() function splits one column into two or more columns at a specified character that separates the variables. When there is an extra separation in some of the entries, use fill="right" to pad missing values with NAs, or use extra="merge" to keep extra elements together. The unite() function combines two columns and adds a separating character. unite takes 3 arguments: (1) the data frame, (2) the name of the new column to create, and (3) a vector of the columns to unite with an underscore, in order.:
 ```r
 # separate then spread
 dat %>% separate(key, c("year", "variable_name"), sep = "_", extra = "merge") %>%
@@ -98,3 +98,5 @@ dat %>%
   spread(variable_name, value) %>%
   rename(fertility = fertility_NA)
 ```
+Combining Tables:
+* The join functions in the dplyr package combine two tables such that matching rows are together.
