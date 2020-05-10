@@ -288,5 +288,5 @@ map(list_or_iterable, function)
 map(i, x)
 # Note: map() always returns a list, use map_chr() for character and map_int() for integer.
 # The recode() can change long factor names (throughout the entire dataset) with the tidyverse package:
-recode(variable_or_column_name, 'long_factor_name_1' = 'shorter_factor_name_1', 'long_factor_name_2' = 'shorter_factor_name_2')
+dataset %>% recode(variable_or_column_name, 'long_factor_name_1' = 'shorter_factor_name_1', 'long_factor_name_2' = 'shorter_factor_name_2')
 ```
