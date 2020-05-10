@@ -105,8 +105,66 @@ dat %>%
   rename(fertility = fertility_NA)
 ```
 Combining Tables:
-* The join functions in the dplyr package combine two tables such that matching rows are together.
+* The join functions in the dplyr package combine two tables such that matching rows are together, they only work for dataframes. In left_join() all rows in the left-hand table are retained and columns from both tables are added together. The right_join() retains rows from the right-hand table and columns from both tables are added together. The inner_join() only keeps rows that have information in both tables. The full_join() keeps all rows from both tables. The semi_join() keeps the part of first table for which we have information in the second. The anti_join() keeps the elements of the first table for which there is no information in the second.
 
 <img src = "https://rafalab.github.io/dsbook/wrangling/img/joins.png" width = 300 height = 350>
 
 (Image courtesy of RStudio. CC-BY-4.0 license. Cropped from original.)
+* Unlike the join functions, the binding functions do not try to match by a variable, but rather just combine datasets (they need must match on the appropriate dimension, either same row or column numbers). bind_cols() binds two objects by making them columns in a tibble. The R-base function cbind() binds columns but makes a data frame or matrix instead. The bind_rows() function is similar but binds rows instead of columns. The R-base function rbind() binds rows but makes a data frame or matrix instead.
+* The set operators in base R works on vectors but if tidyverse/dplyr are loaded, they also work on data frames. You can take intersections of vectors using intersect(). This returns the elements common to both sets. You can take the union of vectors using union(). This returns the elements that are in either set.
+* The set difference between a first and second argument can be obtained with setdiff(). Note that this function is not symmetric, switching arguments can result in different answers. The function set_equal() tells us if two sets are the same, regardless of the order of elements:
+```r
+# intersect vectors or data frames
+intersect(1:10, 6:15)
+intersect(c("a","b","c"), c("b","c","d"))
+tab1 <- tab[1:5,]
+tab2 <- tab[3:7,]
+intersect(tab1, tab2)
+
+# perform a union of vectors or data frames
+union(1:10, 6:15)
+union(c("a","b","c"), c("b","c","d"))
+tab1 <- tab[1:5,]
+tab2 <- tab[3:7,]
+union(tab1, tab2)
+
+# set difference of vectors or data frames
+setdiff(1:10, 6:15)
+setdiff(6:15, 1:10)
+tab1 <- tab[1:5,]
+tab2 <- tab[3:7,]
+setdiff(tab1, tab2)
+
+# setequal determines whether sets have the same elements, regardless of order
+setequal(1:5, 1:6)
+setequal(1:5, 5:1)
+setequal(tab1, tab2)
+```
+Web Scraping:
+* Web scraping/web harvesting is extracting data from a website (when a data file doesn't exist). The information used by a browser to display data is recieved from a server as text, this text is written in HTML. Viewing the code and installing the HTML file of a webpage and bringing it into R can help get your data.
+* The rvest is a web harvesting package of tidyverse. It can proccess HTML and XML (general markup language, HTML is a specific type of XML) files. rvest has functions to extract nodes (<>) from an HTML document, html_nodes() extracts all nodes of different types, and html_node() extracts the first node. To extract a table, use: html_doct %>% html_nodes("table"). Then, use html_table() to convert a HTML table to a data frame:
+```r
+# import a webpage into R
+library(rvest)
+url <- "https://en.wikipedia.org/wiki/Murder_in_the_United_States_by_state"
+h <- read_html(url)
+class(h)
+h
+
+tab <- h %>% html_nodes("table")
+tab <- tab[[2]]
+
+tab <- tab %>% html_table
+class(tab)
+
+tab <- tab %>% setNames(c("state", "population", "total", "murders", "gun_murders", "gun_ownership", "total_rate", "murder_rate", "gun_murder_rate"))
+head(tab)
+```
+* The html_nodes() and html_node() use CSS selectors, but these can start to get complex. So, to easily find the selectors we can use a Chrome extension, [SelectorGadget](https://selectorgadget.com/). Using, this we can find the CSS selectors and extract the wanted data by using those selectrs and the html_nodes() and html_node() functions:
+```r
+h <- read_html("http://www.foodnetwork.com/recipes/alton-brown/guacamole-recipe-1940609")
+recipe <- h %>% html_node(".o-AssetTitle__a-HeadlineText") %>% html_text()
+prep_time <- h %>% html_node(".m-RecipeInfo__a-Description--Total") %>% html_text()
+ingredients <- h %>% html_nodes(".o-Ingredients__a-Ingredient") %>% html_text()
+# This can be turned into a function because recipe pages from websites follow the same, general layout.
+```
