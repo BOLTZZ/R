@@ -168,3 +168,26 @@ prep_time <- h %>% html_node(".m-RecipeInfo__a-Description--Total") %>% html_tex
 ingredients <- h %>% html_nodes(".o-Ingredients__a-Ingredient") %>% html_text()
 # This can be turned into a function because recipe pages from websites follow the same, general layout.
 ```
+<strong>String Processing:</strong>
+
+* Common Tasks:
+  - Extracting numbers from strings
+  - Removing unwanted characters from text
+  - Finding and replacing characters
+  - Extracting specific parts of strings
+  - Converting free form text to more uniform formats
+  - Splitting strings into multiple values
+
+* A function, parse_number() converts a number with commans (450,200) to a number without commas (450200) so the variable won't have a class of character and be a class of numeric.
+* To show strings we can either use double quoutes ("10") or single qoutes ('10'). So, 10 inches can be represnted by this: ```s = '10"'``` and 5 feet: ```s = "5'"```. The slash (\) can be used to escape strings which can help us represent 5ft 10 inches: ```s = '5\'10"'```.
+* In general, string proccesing requires strings and a pattern. Also, they consist of 4 parts, detecting, locating, extracting, and replacing elements of a string. For example, we need to remove commas from 4,500,323,102 so we need to detect the commas, locate them, extract them, and replace them with nothing ("").
+* The stringr package from the tidyverse includes a variety of string processing functions that begin with str_ and take the string as the first argument, which makes them compatible with the pipe. [Stringr cheatsheet](https://evoldyn.gitlab.io/evomics-2018/ref-sheets/R_strings.pdf)
+* Regular expressions (regex) is a way to describe specific characters of a text that can be used to determine if a given string matches the pattern, any string is a regex. A set of rules govern regex to make the proccess efficent and smooth as possible. Regex contains special characters to help search for certain types of strings (like digits), these special characters are shown in the cheatsheet. [Regex cheatsheet](https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf).
+* We can create strings to test our regex by making some to we know should match and some that shouldn't. Then, see if we get the expected results, this helps us check for 2 types of errors, failing to match and incorrectly matching. 
+* Character classes are denoted by square brackets ([]). For example, to find strings/characters 3 or 4 we use [34] which can be written as: ```str_view(string, "[34")```. Or to find the numbers, 1 to 4 we can type: ```str_view(string, "[1-4]")```. Note: In regex everything is a character so 20 is not 20 its 2 or 0. 
+* Anchors can be used to specify the start (^) and end ($) of a pattern. We can use anchors to specify exactly 1 digit, ^//d$ (//d is digits 0 - 9). This results in: ```str_view(string, "^//d$")```.
+* Quantifiers can specify mulitple digits with curly brackets ({}) and possible number of times the pattern repeats. The pattern for 1 or 2 digit is //d{1,2}. This results in:```str_view(string, "^//d{1,2}$")```. Note: the asterik (*) means zero or more instances, which can be useful for quantifiers, ? = none or once, and + = one or more.
+* Using all we learned we can create a regex to find a pattern of feet and inches in the format of: 4_to_7' 0_12" (an example being 5' 11"). The code for this would be: ```str_view(string, "^[4-7]'\\d{1,2}\"$")```.
+* The things we disccused, regex, anchors, and quantifiers can be used for search and replace, via: ```str_replace(string, string_needed-to_be_replaced, string_replacing_it)```.
+* Groups permit the extraction of values, being defined by parantheses (). Groups permit tools to identify specific parts of the pattern so it can be extracted. We want the first digit between 4 and 7 ([4-7]) with the second being none or more digits (\\d*) which results in "^[4-7], \\d*$". But, each is a group so we can encapsulate the parts we want to extract, resulting in: ```str_view(string, "^([4-7]), (\\d*)$")```. A powerful feature with groups is that you can refer to the extracted value in regex when searching and replacing, with \\i finding the value from the ith group. \\1 would be the value in the 1st group and \\2 is the value in the 2nd group.
+* Remember, sometimes it might not be worth writing code for some rare cases.
