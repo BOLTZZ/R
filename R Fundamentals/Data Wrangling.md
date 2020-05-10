@@ -191,3 +191,21 @@ ingredients <- h %>% html_nodes(".o-Ingredients__a-Ingredient") %>% html_text()
 * The things we disccused, regex, anchors, and quantifiers can be used for search and replace, via: ```str_replace(string, string_needed-to_be_replaced, string_replacing_it)```.
 * Groups permit the extraction of values, being defined by parantheses (). Groups permit tools to identify specific parts of the pattern so it can be extracted. We want the first digit between 4 and 7 ([4-7]) with the second being none or more digits (\\d*) which results in "^[4-7], \\d*$". But, each is a group so we can encapsulate the parts we want to extract, resulting in: ```str_view(string, "^([4-7]), (\\d*)$")```. A powerful feature with groups is that you can refer to the extracted value in regex when searching and replacing, with \\\i finding the value from the ith group. \\\1 would be the value in the 1st group and \\\2 is the value in the 2nd group.
 * Remember, sometimes it might not be worth writing code for some rare cases.
+* The extract() function behaves similarly to the separate() function but allows extraction of groups from regular expressions:
+```r
+# first example - normally formatted heights
+s <- c("5'10", "6'1")
+tab <- data.frame(x = s)
+
+# the separate and extract functions behave similarly
+tab %>% separate(x, c("feet", "inches"), sep = "'")
+tab %>% extract(x, c("feet", "inches"), regex = "(\\d)'(\\d{1,2})")
+
+# second example - some heights with unusual formats
+s <- c("5'10", "6'1\"","5'8inches")
+tab <- data.frame(x = s)
+
+# separate fails because it leaves in extra characters, but extract keeps only the digits because of regex groups
+tab %>% separate(x, c("feet","inches"), sep = "'", fill = "right")
+tab %>% extract(x, c("feet", "inches"), regex = "(\\d)'(\\d{1,2})")
+```
