@@ -209,6 +209,8 @@ tab <- data.frame(x = s)
 tab %>% separate(x, c("feet","inches"), sep = "'", fill = "right")
 tab %>% extract(x, c("feet", "inches"), regex = "(\\d)'(\\d{1,2})")
 ```
+Practice your regex [here](https://regexone.com/).
+
 <strong>Dates, Times, and Text Mining:</strong>
 
 Dates And Times:
@@ -220,4 +222,17 @@ Dates And Times:
 
 Text Mining:
 
-* 
+* Many applications data start out as text, like spam filtering, cyber-crime prevention, counter-terrorism, and sentiment analysis.
+* An example of text minig is analyzing [Trump's tweets](http://varianceexplained.org/r/trump-tweets/). Here is a good [book](https://www.tidytextmining.com/) on text mining.
+* The tidytext package helps convert from text to a tidy table. Having the data in this format helps the facilitation of data visualization and and applying statistical techniques.
+* The main function needed to achieve this is unnest_tokens(). A token refers to the units that we are considering to be a data point. The most common tokens will be words, but they can also be single characters, ngrams, sentences, lines or a pattern defined by a regex. The functions will take a vector of strings and extract the tokens so that each one gets a row in the new table. Here is a simple example:
+```r
+example <- data_frame(line = c(1, 2, 3, 4),
+                      text = c("Roses are red,", "Violets are blue,", "Sugar is sweet,", "And so are you."))
+example
+example %>% unnest_tokens(word, text)
+```
+* Collecting the most common words can result in just common words in the English language that aren't informative. The tidytext package has a database of these commonly used words, referred to as stop words (stop_words), in text mining. These stop words can be filtered out to get a more accurate picture of the most common words.
+* In sentiment analysis we assign a word to one or more "sentiment". Although this approach will miss context dependent sentiments, such as sarcasm, when performed on large numbers of words, summaries can provide insights.
+* The first step in sentiment analysis is to assign a sentiment to each word. The tidytext package includes several maps or lexicons in the object sentiments. There are several lexicons in the tidytext package that give different sentiments. For example, the bing lexicon divides words into positive and negative (get_sentiments("bing")). The AFINN lexicon assigns a score between -5 and 5, with -5 the most negative and 5 the most positive (get_sentiments("affin")). 
+* After doing all this we find out that disgust, anger, negative sadness and fear sentiments are associated with the Android in a way that is hard to explain by chance alone. Words not associated to a sentiment were strongly associated with the iPhone source, which is in agreement with the original claim about hyperbolic tweets.
