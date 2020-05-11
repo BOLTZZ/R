@@ -1,10 +1,12 @@
 # Data Wrangling:
+[Data Wrangling Cheatsheet](https://rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+
 <strong>Data Import:</strong>
 * One of the most common ways to store and share data is through spreadsheets (file version of a data frame).
 * Spreadsheets have rows seperated by returns and columns separated by a delimiter. The most common delimiters are comma, semicolon, white space and tab.
 * Many spreadsheets are raw text files and can be read with any basic text editor. However, some formats are proprietary and cannot be read with a text editor, such as Microsoft Excel files (.xls). Most import functions assume that the first row of a spreadsheet file is a header with column names. To know if the file has a header, it helps to look at the file with a text editor before trying to import it.
 * The working directory is where R looks for files and saves files by default. On RStudio navigate to Session then Set Working Directory to set a working directory (it's suggested to create a new directory for each new project and keep the raw data in that directory).
-* readr is a library of the tidyverse package that contains functions for reading data stored in text file spreadsheets into R:
+* readr is a library of the tidyverse package that contains functions for reading data stored in text file spreadsheets into R ([cheatsheet](https://rawgit.com/rstudio/cheatsheets/master/data-import.pdf)):
 
 | Function | Format | Typical Suffix
 | -- | -- | --- 
@@ -237,3 +239,50 @@ example %>% unnest_tokens(word, text)
 * In sentiment analysis we assign a word to one or more "sentiment". Although this approach will miss context dependent sentiments, such as sarcasm, when performed on large numbers of words, summaries can provide insights.
 * The first step in sentiment analysis is to assign a sentiment to each word. The tidytext package includes several maps or lexicons in the object sentiments. There are several lexicons in the tidytext package that give different sentiments. For example, the bing lexicon divides words into positive and negative (get_sentiments("bing")). The AFINN lexicon assigns a score between -5 and 5, with -5 the most negative and 5 the most positive (get_sentiments("affin")). 
 * After doing all this we find out that disgust, anger, negative sadness and fear sentiments are associated with the Android in a way that is hard to explain by chance alone. Words not associated to a sentiment were strongly associated with the iPhone source, which is in agreement with the original claim about hyperbolic tweets.
+* An example of text mining:
+```r
+# We're going to be using the gutenbergr package which contains text files of many different books.
+# Load everything up:
+library(tidyverse)
+library(gutenbergr)
+library(tidytext)
+options(digits = 3)
+# The gutenberg_metadata contains all the books and documents.
+# We'll use string_detect() to find the ID novel of Pride and Prejudice:
+gutenberg_metadata %>%
+    filter(str_detect(title, "Pride and Prejudice"))
+# 6 different IDs were returned. 
+# gutenberg_works() helps us filter out duplicate books and keep on english language works:
+gutenberg_works(title == "Pride and Prejudice")$gutenberg_id
+# This results in an ID number of 1342
+book <- gutenberg_download(1342)
+words <- book %>%
+  unnest_tokens(word, text)
+nrow(words)
+# The above, downloads the book with ID 1342 and gets all the words in the book using unnest_tokens()
+# Also, the nrow(words) prints out the number of words which is 122,204
+words <- words %>% anti_join(stop_words)
+nrow(words)
+# The above, removes the stop words and stores it to the original vector (words). The number of words after removing stop words are 37246
+words <- words %>%
+  filter(!str_detect(word, "\\d"))
+nrow(words)
+# The above, removes any digits and stores it in words. The number of words after removing any digits are 37180
+freq = words %>% count(word)
+# The above, creates a data.frame of the frequency of the words in the book.
+sum(freq$n > 100) 
+# The above, finds the number of words that appear more than 100 times in the book using sum since freq$n > 100 returns a logical. 23 words appear more than 100 times in the book.
+freq %>% filter(n == max(n))
+# The above prints out the word that appears the most in the book and the number of times it appears. The word that appears the most in the book is elizabeth and it appears 597 times.
+# Loads textdata which will help us use sentiment affin:
+libaray(textdata)
+afinn <- get_sentiments("afinn")
+# The above, sets up a dataframe named afinn as the sentiments for afinn.
+sent = inner_join(afinn, words)
+nrow(sent)
+# The above, sets up a data frame named sent (short for sentiment) as words that appear in both dataframe objects, afinn and words. nrow() finds out that 6,065 words have sentiments in the afinn lexicon.
+mean(sent$value > 0)
+# The above, finds out the proportion of words in the sent dataframe that have a positive value (basically positive sentiment). The proprotion is 0.563
+sum(sent$value == 4)
+# The above, finds the number of words that have a value of 4 in the sent data frame. Which are 51 words.
+```
