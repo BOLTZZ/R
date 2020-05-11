@@ -1,5 +1,7 @@
 *Note: Check out [data science functions](https://github.com/BOLTZZ/R/blob/master/R%20Fundamentals/R%20Basics%20&%20Syntax.md#import-data-gathering-functions) for data science related functions.*
 # Data Visualization:
+[Data Visualization cheatsheet](https://rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)
+
 There are 3 types of data:
 1. Categorical (like male or female).
 2. Numerical (numbers).
@@ -220,3 +222,4 @@ Visualization Principles:
 options(digits = 3)
 # Globally defines all numbers to have 3 sig figs.
 ```
+Check out [graphing with multiple variables](https://github.com/BOLTZZ/R/blob/master/R%20Fundamentals/Creating%20Graphs%20With%20Multiple%20Variables.md) for more graphing info.
