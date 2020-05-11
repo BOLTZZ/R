@@ -209,3 +209,15 @@ tab <- data.frame(x = s)
 tab %>% separate(x, c("feet","inches"), sep = "'", fill = "right")
 tab %>% extract(x, c("feet", "inches"), regex = "(\\d)'(\\d{1,2})")
 ```
+<strong>Dates, Times, and Text Mining:</strong>
+
+Dates And Times:
+
+* Dates can be represented as strings but once a reference day (epoch) is picked they can be converted to numbers. Most computer languages use January 1st, 1970 as the epoch. So every date can be a number, relative to the epoch (November 2nd, 2017 = 17,204). 
+* But, the above can be confusing as if you were told 17,204 instead of Nov. 2nd, 2017 you would be quite confused. Similar things happen with time but even more confusing because of time zones. Because of this, a datatype just for dates and times is defined by R.
+* Tidyverse has functionalities to deal with dates and time via the lubridate package. Extract the year, month and day from a date object with the year(), month() and day() functions. The parsers convert strings into dates with the standard YYYY-MM-DD format (ISO 8601 format). Use the parser with the name corresponding to the string format of year, month and day (ymd(), ydm(), myd(), mdy(), dmy(), dym()).
+* The Sys.time() gets the time in R with lubridate having a more advanced function, now(), allowing you to permit the time zone as a character ("PST"). You can extract values from time objects with the hour(), minute() and second() functions. OlsonNames() allows you to view all the time zones in lubridate and there are functions to parse strings into times ("12:34:56" -> "12H 34M 56S"). Parsers can also create combined date-time objects (for example, mdy_hms()).
+
+Text Mining:
+
+* 
