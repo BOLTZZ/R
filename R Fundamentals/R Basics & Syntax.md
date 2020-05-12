@@ -291,4 +291,6 @@ map(i, x)
 dataset %>% recode(variable_or_column_name, 'long_factor_name_1' = 'shorter_factor_name_1', 'long_factor_name_2' = 'shorter_factor_name_2')
 # The cor() finds the correlation coefficent of 2 variables:
 cor(variable_1, variable_2)
+# The lm() finds the least squares estimate, useful for creating linear models:
+lm(predicting_variable ~ variables_using_to_predict, data = dataset)
 ```
