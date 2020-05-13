@@ -79,3 +79,130 @@ rss <- function(beta0, beta1, data){
 <img src = "https://rafalab.github.io/dsbook/book_files/figure-html/father-son-regression-1.png" width = 200 height = 200>
 
 * If you just want the predictions the function, predict(), takes in an lm object as input and returns these predictions: ```predict(lm(son ~ father, data= galton_heights)```.
+
+Dyplr:
+* The lm() isn't part of the tidyverse so it doesn't know how to handle the outcome of a tidyverse function, like group_by, which is a tibble.
+* The tibble is a special kind of data frame, the group_by() returns a special tibble, the grouped tibble. The functions, select, mutate, filter, and arrange return the class of the input, preserve the class of the input. Tibbles are the data frames for tidyverse, tibbles can be thought of as the modern version of data frames. <br>
+Differences Between Tibbles and Data Frames:
+
+    1. Tibbles display better, the print() for tibbles are much more readable than data frames.
+    2. Subset of tibbles are tibbles. But, if you subset a data frame you might get back a different object, like an integer.
+    3. Tibbles give you a warning if you try to access a column that doesn't exist. But, data frames don't give warnings which can make it hard to debug code.
+    4. Columns of a data frame need to be a vector of numbers, string, or Booleans. But, tibbles can have columns with more complex objects like lists or functions.
+    5. Tibbles can be grouped, group_by() returns a grouped tibble and this stores information that lets you know which rows are in which groups.
+* Tidyverse functions return data frame objects to facilitate stringing via the pipe (%>%) operator. But, most R functions don't recognize tibbles nor do they return data frames (like the lm()).
+* The do() function serves as a bridge between R functions, like lm(), and the tidyverse. It understands group tibbles and always returns a data frame. We need to include a column name so do() actually returns a data frame and doesn't return the actual output. For an useful data frame to be constructed the output of the function, inside do(), must be a data frame. But, don't name the data frame because then the name of the data frame will be the column name and the objects in the column will be data frame objects. And, if the data frame being returned has more than 1 row, they will be concatenated properly. An example:
+```r
+dat %>% 
+  group_by(HR) %>% 
+  do(get_slope(.))
+```
+* The broom package ([kind of cheatsheet](https://4va.github.io/biodatasci/handouts/r-stats-cheatsheet.pdf)) is designed to facilitate the use of model fitting functions (like lm()) with tidyverse. It has 3 main functions, which extract information from the object returned by the function lm() and return it in a tidyverse friendly data frame, called tidy(), glance(), and augment().
+* The tidy() returns estimates and related information as a data frame, you can other important summaries (like confidence intervals) using arguments. Combining this with do() and lm() results in neat tables that make visualization with ggplot2 really easy:
+```r
+# use tidy to return lm estimates and related information as a data frame
+library(broom)
+fit <- lm(R ~ BB, data = dat)
+tidy(fit)
+
+# add confidence intervals with tidy
+tidy(fit, conf.int = TRUE)
+
+# pipeline with lm, do, tidy
+dat %>%  
+  group_by(HR) %>%
+  do(tidy(lm(R ~ BB, data = .), conf.int = TRUE)) %>%
+  filter(term == "BB") %>%
+  select(HR, estimate, conf.low, conf.high)
+  
+# make ggplots
+dat %>%  
+  group_by(HR) %>%
+  do(tidy(lm(R ~ BB, data = .), conf.int = TRUE)) %>%
+  filter(term == "BB") %>%
+  select(HR, estimate, conf.low, conf.high) %>%
+  ggplot(aes(HR, y = estimate, ymin = conf.low, ymax = conf.high)) +
+  geom_errorbar() +
+  geom_point()
+```
+* The glance() function relates to model specific outcomes. It returns model specific summaries.
+* The augment() function relates to observation specific outcomes It returns observation specific summaries.
+
+Regression And Baseball:
+* The linear model for runs per game is (y<sub>i</sub> = runs per game, x<sub>1</sub> = base on balls per game, x<sub>2</sub> = home runs per game): y<sub>i</sub> = β<sub>0</sub> + β<sub>1</sub>x<sub>1</sub> +  β<sub>2</sub>x<sub>2</sub> + ϵ<sub>i</sub>. To use lm() we tell it there are 2 predictor variables: 
+```r
+fit <- Teams %>% 
+  filter(yearID %in% 1961:2001) %>% 
+  mutate(BB = BB/G, HR = HR/G,  R = R/G) %>%  
+  lm(R ~ BB + HR, data = .)
+```
+* The estimated slope with 1 variable were BB slope = 0.735 and HR slope = 1.844. But, with the multivariable model both effects/slopes go down with BB = 0.387 and HR = 1.561. To construct a metric to pick players we need to consider singles, doubles, and triples, too.
+* We're going to assume these 5 variables are all normally distributed. So if we pick any 1 of them and hold the other 4 constant, the outcome (runs per game) is linear. And, the slopes for this relationship don't depend on the other 4 values that were held constant. If this model holds true then the linear equation is (x<sub>i, 1</sub> = BB, x<sub>i, 2</sub> = singles, x<sub>i, 3</sub> = doubles, x<sub>i, 4</sub> = triples, x<sub>i, 5</sub> = HR): y<sub>i</sub> = β<sub>0</sub> + β<sub>1</sub>x<sub>i, 1</sub> + β<sub>2</sub>x<sub>i, 2</sub> + β<sub>3</sub>x<sub>i, 3</sub> +  β<sub>4</sub>x<sub>i, 4</sub> + β<sub>5</sub>x<sub>i, 5</sub> + ϵ<sub>i</sub>. Using lm() we can find the LSE:
+```r
+fit <- Teams %>% 
+  filter(yearID %in% 1961:2001) %>% 
+  mutate(BB = BB / G, 
+         singles = (H - X2B - X3B - HR) / G, 
+         doubles = X2B / G, 
+         triples = X3B / G, 
+         HR = HR / G,
+         R = R / G) %>%  
+  lm(R ~ BB + singles + doubles + triples + HR, data = .)
+```
+* Now, to test this metric out we can use the predict() to predict number of runs for each team in 2002 since we didn't use the year 2002 in our sample data:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/model-predicts-runs-1.png" width = 200 height = 200>
+
+* The metric does a pretty good job as the actual outcome points fall pretty close to the predicted values (which is the line).
+* We can use our fitted model to form a more informative model that relates directly to run production. Specifically, to define a metric for player A we imagine a team of players just like A and use our fitted regression model to predict how many runs this team would score. Formula: -2.769 + (0.371 * BB) + (0.519 * singles) + (0.771 * doubles) + (1.240 * triples) + (1.433 * HR). We have derived a metric for teams based on team level summary statistics but for each indivual player we still need some more work to do.
+* For players, a rate that takes into account oppurtunities is a per-plate-appearance. To make the per-game team rate comporable to the per-plate-appearance player rate we compute the average number of team plate appearances per game:
+```r
+# average number of team plate appearances per game
+pa_per_game <- Batting %>% filter(yearID == 2002) %>% 
+  group_by(teamID) %>%
+  summarize(pa_per_game = sum(AB+BB)/max(G)) %>% 
+  pull(pa_per_game) %>% 
+  mean
+```
+* Now, we fit our model with player plate appearances and data from 1999 to 2001 to predict players in 2002. The player specific metrics are the number of runs we predict a team would score if all batters are like that player (if that player played the whole time). But, we can see wide variability:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/r-hat-hist-1.png" widht = 200 height = 200>
+
+* We need to know the player's salary (limited budget) and player's position (fit team criteria). We need to do some data wrangling and combine data in different tables in the Lahman library. Once we take this into consideration and create a list of really good players that aren't too expensive then we've created our team!
+* A way to pick players is via *[linear programming](https://brilliant.org/wiki/linear-programming/)*:
+```r
+library(reshape2)
+library(lpSolve)
+
+players <- players %>% filter(debut <= "1997-01-01" & debut > "1988-01-01")
+constraint_matrix <- acast(players, POS ~ playerID, fun.aggregate = length)
+npos <- nrow(constraint_matrix)
+constraint_matrix <- rbind(constraint_matrix, salary = players$salary)
+constraint_dir <- c(rep("==", npos), "<=")
+constraint_limit <- c(rep(1, npos), 50*10^6)
+lp_solution <- lp("max", players$R_hat,
+                  constraint_matrix, constraint_dir, constraint_limit,
+                  all.int = TRUE) 
+```
+* The on-base-percentage plus slugging percentage (OPS) is used by sabermetricians instead of batting average: BB/PA +(Singles+2Doubles+3Triples+4HR)/AB.
+* Sophmore Slump is when a second effort fails to live up to the standard of the first effort, commonly used for apathy of students, performance of atheletes, singers/bands, and more. We can see if this slump exists in the baseball data by creating a table of player ID, names, and most played position. Also, we'll create a table of Rookie of the Year winners and add their batting statistics (batting averages) with players that played a sophmore season. Once this table is created, you can see that slump appears to be real as the batting average drops the 2nd year with a proportion of 68% batters having a lower batting average the 2nd year.
+* Is this slump the jitters or a jinx? To figure this out we can look at all players and perform the similar operations we performed. Intrestingly, the top performers (who aren't rookies) go down the next year, even though its not their sophmore year. Also, the worst performers have their batting averages go up the next year. 
+* Turns out, there's no such thing as a Sophmore Slump. Since the correlation for performance in 2 seperate years is high but not perfect. The 2013 and 2014 data for batting averages looks like a bivariate normal distribution:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/regression-fallacy-1.png" width = 200 height = 200>
+
+* The correlation is 0.46 (not that strong) and if we're to predict the 2014 batting average (y) for a player that had a 2013 batting average (x) we would use the regression equation: (y - 0.225)/.032 = 0.46 * (x - .261/.023). Since the correlation is not prefect we except 2013 high performers to do a little worse in 2014 (regression to the mean) and the other way around. It's not a jinx.
+* 2 or more variables, assuming the pairs are bivariate normal, which allow for a linear model cover most real life examples where linear regression is used. Another application is *measurment error models*.
+* Measurment error models usually have nonrandom covariates (like time) and randomness is introduced through measurment eror other than sampling or natural variability.
+* You and your scientific team are studying velocity and 1 person climbs the Tower of Pisa and drops a ball, other assistants record the position at different times. The falling_object dataset contains data on what that would look like and this is it graphed:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/gravity-1.png" width = 200 height = 200>
+
+* By looking at the plot you deduce the position should follow a parabola which can be written as: f(x) =  β<sub>0</sub> + β<sub>1</sub>x + β<sub>2</sub>x<sup>2</sup>. The data doesn't exactly follow a parabola which is due to measurment error. To account for this we write (y<sub>i</sub> = distance in meters, x<sub>i</sub> = time in seconds, ϵ = measurment error): y<sub>i</sub> = β<sub>0</sub> + β<sub>1</sub><sub>x<sub>i</sub> + β<sub>2</sub><sub>i</sub>x<sup>2</sup> + ϵ<sub>i</sub>, i = 1, ... , N. Measurment error is assumed to be random, independent from each other, and having the same distribution from each eye. Also, it's assumed that measurment error has no bias so the expected value of epsilon is 0 (E[ϵ] = 0). This is a linear model (combination of known quantaties, x's, and unknown parameters, betas). Unlike the previous example the x's are fixed quantaties (time), no conditioning.
+* To start actually predicting about other falling objects we need numbers so we need to solve for the unknown parameters. For this we should solve for the LSEs. The LSEs don't require the errors to be approximatley normal so we can use lm() to find the smallest RSS (LSE):
+```r
+fit <- falling_object %>%
+    mutate(time_sq = time^2) %>%
+    lm(observed_distance~time+time_sq, data=.)
+tidy(fit)
+```
+* Now, we've recieved our estimated parameters and can use the broom function, augment(), to check if the predicted data fits the collected data:
+<img src= = "https://rafalab.github.io/dsbook/book_files/figure-html/gravity-1.png" width = 200 height = 200>
+    
+* This fits with the formula for the velocity of a falling object and fits with the collected data.
