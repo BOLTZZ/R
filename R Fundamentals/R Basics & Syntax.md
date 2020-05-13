@@ -293,4 +293,6 @@ dataset %>% recode(variable_or_column_name, 'long_factor_name_1' = 'shorter_fact
 cor(variable_1, variable_2)
 # The lm() finds the least squares estimate, useful for creating linear models:
 lm(predicting_variable ~ variables_using_to_predict, data = dataset)
+#  The do() function serves as a bridge between R functions, like lm(), and the tidyverse.
+do(lm(R ~ BB, data = Teams))
 ```
