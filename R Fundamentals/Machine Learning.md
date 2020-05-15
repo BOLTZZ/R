@@ -21,3 +21,115 @@ An example:
 * When letters are recieved in the post office, they're sorted by zip code. This is done thanks to machine learning algorithms to read the zip code and robots to sort the letters. 
 * The first step in building an algorithm is to identify what are the outcomes and features. *Traning data* is known data that is used to build the algorithm.
 * The sent in images are converted to a 28 by 28 pixelated image (784 pixels). For each pixel we obtain a grayscale intensity between 0 (white) and 255 (black), considered continuous. For each digitized image, i, there is a categorical outcome, Y<sub>i</sub>, which can be one of 10 values (0, 1, 2, 3, 4, 5, 6, 7, 8, 9) and there are 784 features (X<sub>i, 1</sub>, ..., X<sub>i, 784</sub>). The bolded <strong>X<sub>i</sub></strong> is used to represent the vector of indivual predictors: <strong>X<sub>i</sub></strong> = X<sub>i, 1</sub>, ..., X<sub>i, 784</sub>. Uppercase values, generally, denote random variables whislt lowercase values, generally, denote observed values (X = x).
+
+<strong>Machine Learning Basics:</strong>
+
+Maching Learning Algorithms Basics:
+* The caret package ([cheatsheet](https://d33wubrfki0l68.cloudfront.net/ad16acdb544c1a9ca00c7dd175312a52f45e8979/7e9a2/wp-content/uploads/2015/01/caret-cheatsheet.png)) has a lot of functions useful for building and assembling machine learning algorithms.
+* We're going to try to predict sex based on height:
+  * For this example, the heights dataset in the dslabs package will be used. The outcome is sex (Y) and the predictor is height (X), the outcome is categorical since Y can be male or female. We won't be able to predict Y (sex) very accuratley based on X (height) since male and female heights aren't that different relative to group variability. 
+  * In machine learning, to test the algorithm we split the dataset we're using into 2 and act as if we don't know the outcome for 1 of these 2 sets. Since, the end algorithm will be used by user's whose data isn't in our datset we used to build the algorithm. The group which we used to develop the algorithm is known as the *training set* and the group for which we pretend we don't know the algorithm as the *test set*. 
+  * One way to accquire the test and training sets is to randomly split up the data. The caret package has a function for this called createDataPartition(): 
+```r
+set.seed(3)
+test_index = createDataParition(y_value_outcome_value_, times = 1, p = 0.5, list = FALSE) # arg times = how many random samples of indexes to return; arg p = proportion of index represented; arg list = indexes returnes as a list or not.
+train_set = heights[-test_index, ]
+test_set = heights[test_index, ]
+# The sets are defined up above.
+```
+* Example cont:
+  * Now, the algorithm will be developed only using the training set. Then it'll be *freezed* and evaluated using the teset set. The simplest way to evaluate the algorithm when the outcomes are categorical is to report the proportion of cases that were correct in the test set, referred to as *overall accuracy*.
+  * It's reccomended that categorical outcomes in machine learning be coded as factors: ```factor(levels = levels(test_set$sex))```.
+  * Exploratory data suggests that males, on average, are slightly taller than females which we can use for our machine learning algorithm. So we create a cutoff height for females, so your sex is male if your taller than the cutoff. We examine a bunch of different cutoffs, ranging from 61 inches to 70 inches, and find which one has the best accuracy in the training set.
+  * We find the cutoff of 64 inches gives the best accuracy, at ~ 83%. Just testing the algorithm on the training set can lead to *overfitting* which is an overly optimistic evaluation. So, we test our algorithm on the test set and get an accuracy of ~ 81% (which is a difference of ~ 2% from the training set), so our evaluation isn't too optimistic. 
+  * Final code:
+```r
+# Get the libraries and data loaded:
+library(tidyverse)
+library(caret)
+library(dslabs)
+data(heights)
+# define the outcome and predictors
+y <- heights$sex
+x <- heights$height
+# generate training and test sets
+set.seed(2007)
+test_index <- createDataPartition(y, times = 1, p = 0.5, list = FALSE)
+test_set <- heights[test_index, ]
+train_set <- heights[-test_index, ]
+# examine the accuracy of 10 cutoffs
+cutoff <- seq(61, 70)
+accuracy <- map_dbl(cutoff, function(x){
+  y_hat <- ifelse(train_set$height > x, "Male", "Female") %>% 
+    factor(levels = levels(test_set$sex))
+  mean(y_hat == train_set$sex)
+})
+# Find the best cutoff and run the algorithm on the test data:
+max(accuracy)
+best_cutoff <- cutoff[which.max(accuracy)]
+best_cutoff
+y_hat <- ifelse(test_set$height > best_cutoff, "Male", "Female") %>% 
+  factor(levels = levels(test_set$sex))
+y_hat <- factor(y_hat)
+mean(y_hat == test_set$sex)
+```
+
+Confusion Matrix:
+* We used a cutoff of 64 inches but the average female if 65 inches tall, so this prediction rule seems wrong. But, generally, overall accuracy can be a deceptive measure. To see this we'll create a *confusion matrix*, which tabulates each combination of prediction and actual value.
+* The confusion matrix can be made using the function table(): ```table(predicted = y_hat, actual = test_set$sex)```. It acutally reveals a problem, computing the accuracy per sex:
+```r
+test_set %>% 
+  mutate(y_hat = y_hat) %>%
+  group_by(sex) %>% 
+  summarize(accuracy = mean(y_hat == sex))
+```
+Reveals that there's a very high accuracy for males (~93%) and a very low accuracy for females (~42%). There's an imbalance in accuracy, more than 50% of females are predicted to be males. The reason the overall accuracy is ~ 83% is because of the *prevelance*, there are more males in the dataset than females. In fact, our dataset has 77% males. The large mitakes for females is outweighed by the gains in correct calls for males.
+* This bias in the dataset can be a big problem in machine learning. If the traning data is biased the algorithm is likely to be biased as well. The test set is also affected because it was derived from the bias dataset. There are serveral ways we can rid of the bias or make sure prevelance doesn't cloud our assesments via the confusion matrix.
+* A general improvment over using overall acurracy is to study sensitivity and specificity seperatley. To define sensitivity and specificity we need a binary outcome. Wehn the outcomes are categorical qe can define these terms for a specific category. Like, in the digits example (reading digits 0 - 9) we can ask for the specificty in the case of correctly predicting 2 as opposed to some other digit.
+* Once we specify a category of intereset then we can think about positive outcomes (Y = 1) and negative outcomes (Y = 0). 
+* *Sensitivity* is defined as the ability of an algorithm to predict a positive outcome when the actual outcome is positive (Ŷ = 1 when Y = 1). Since an algorithm that predicts a positive outcome (Y = 1) no matter what has perfect sensitivity, the metric on its own is not good enough to judge an algorithm. High sensitivity: Y = 1 -> Ŷ = 1.
+* *Specificity* is the ability of an algorithm to predict a negative when the observed outcome is negative (Ŷ = 0 when Y = 0). High specificity: Y = 0 -> Ŷ = 0. Another way to define specificity is the portion of positive calls that're actually positive. In this case, High specificity: Ŷ = 1 -> Y = 1. 
+* To provide a precise defintion the 4 entries of the confusion matrix are labeled:
+
+| | Actually Positive | Actually Negative
+|--|--|--
+|Predicted Positive|	True positives (TP)|	False positives (FP)
+|Predicted Negative|	False negatives (FN)|	True negatives (TN)
+* Sensitivity = TP / (TP + FN) or the proportion of True Positives in the Actually Positive column, this quantitiy is referred to as the *true positive rate (TPR) or recall*. Specificity = TN / (TN + FP) or the proportion of True Negatives in the Actually Negative column, this quantatity is referred to as the *true negative rate (TNR)*. Another way of quantifying specificity = TP / (TP + FP) or the proportion of True Positives in the Predicted Positive row, this quantatity is referred to as the *positive predicted value (PPV) or precision*.
+* Unlike the TPR or TNR the PPV depends on prevelance since higher prevelance implies you can get higher PPV (precision) even when guessing. 
+
+|A measure of | Name 1 | Name 2 | Definition | Probability Representation | 
+| -- | -- | -- | -- | -- |
+| Sensitivity | True Positive Rate (TPR) | Recall | TP / (TP + FN) | Pr(Ŷ = 1 | Y = 1) | 
+| Specificity | True Negative Rate (TNR) | 1 - False Positive Rate (FPR) | TN / (TN + FP) | PR(Ŷ = 0 | Y = 0)
+| Specificty | Positive Predicted Value (PPV) | Precision | TP / (TP + FP) | PR(Y = 1 | Ŷ = 1)
+* The confusionMatrix() in caret computes all the above metrics once a positive is defined: ```confusionMatrix(data = y_hat, reference = test_set$sex) # The function expects factors as inputs and the 1st level is considered the positive outcome or y = 1. In this case, female is positive since it comes before male alphabetically.```
+* Even though using specificity and sensitivity is encouraged, it useful to have a 1 number summary (like optimization purposes). One metric, preferred over overall accuarcy is the average of specificity and sensitivity, referred to as the *balance accuracy*. Since specificity and sensitivity are rates it's better to compute the *harmonic mean* (*F<sub>1</sub> score*) like this: 1/0.5 * (1/recall + 1/precision) or written as: 2 * ((precision * recall)/(precision + recall)).
+* In different types of contexts, some types of errors are more costly than others. For example, in the case of plane safety, it's much more important to maximize sensitivity over specificity. Failing to predict a plane will malfunction before it crashes is a much more costly error than grounding the plane, when it's actually in perfect condition. On the other hand, in a capital murder case the opposite is true since a false positive can lead to killing an innocent person. 
+* The F<sub>1</sub> score can be adapted to weigh specificity and sensitivity differently. To do this we define β to define how much more important specificity is compared to sensitivity and then use a weight harmonic average: 1/(((β<sup>2</sup>/1 + β<sup>2</sup>) * (1/recall)) + ((1/1 + β<sup>2</sup>) * (1/precision))). 
+* The F_meas() function in caret computes the summary with β defaulting to 1: ```F_meas(data = y_hat, reference = factor(train_set$sex)) #Since beta defaults to 1 we don't need to change the value of beta.```. We can incorporate this into the code and find the best cutoff:
+```r
+# maximize F-score
+cutoff <- seq(61, 70)
+F_1 <- map_dbl(cutoff, function(x){
+  y_hat <- ifelse(train_set$height > x, "Male", "Female") %>% 
+    factor(levels = levels(test_set$sex))
+  F_meas(data = y_hat, reference = factor(train_set$sex))
+})
+max(F_1)
+
+best_cutoff <- cutoff[which.max(F_1)]
+y_hat <- ifelse(test_set$height > best_cutoff, "Male", "Female") %>% 
+  factor(levels = levels(test_set$sex))
+sensitivity(data = y_hat, reference = test_set$sex)
+specificity(data = y_hat, reference = test_set$sex)
+```
+This results in a cutoff of 66 inches with a percentage of 61%. The 66 inches cutoff makes much more sense than 64 inches and balances the specificity and sensitivity in the confusion matrix.
+* A machine learning algorithm with very high specificity and sensitivity may not be useful in practice when prevelance is closer to either 0 or 1. An example of this would be a doctor who specalizes in a rare disease and is intrested in developing an algorithm to see who has the disease. You develop an algorithm with very high sensitivity because if the patient has the disease the algorithm is very likely to predict correctly. But, because of high sensitivity there will be a lot of false positives, in fact, half of your testing data results in positives even though the prevelance of the disease is 5 in 1,000. And, to correctly diagnose the precision matters the most.
+* We can calculate the precision of your algorithm to correctly diagnose the disease, Pr(Y = 1 | Ŷ = 1). Using Bayes theorem the 2 measures can be connected, resulting in: Pr(Y | Ŷ = 1) = Pr(Y = 1 | Ŷ = 1) * Pr(Y = 1)/Pr(Ŷ = 1). And, we already know your dataset has a prevelance of 50% for the disease while the actual rate is 0.5%. This results in: Pr(Y = 1)/Pr(Ŷ = 1) = 50%/0.5% = 0.01, which means your precision is less than 0.01.
+* One way to compare sensitivty and specificity is to graph them and check for bias. One way to do this is by using the *reciever operating characteristic (ROC) curve*. The ROC curve is the sensitivity (TPR) versus specificity (1 - FPR). We can construct a ROC curve to find the if the height based cutoff method is good or the guessing sex method is good (a perfect method would shoot straight up to 1 and then stay there, perfect sensitivity for all values of specificity):
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/roc-3-1.png" width = 400 height = 200>
+
+* ROC curves are quite good for comparing methods (guessing or height cutoff) but neither of the measures plotted depend on prevelance. In these cases (where prevelance matters), we might make a *precision-recall plot*, its similar to ROC but precision is plotted against recall:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/precision-recall-1-1.png" width = 400 height = 200>
+The reason guessing method is higher for males than females is because of the bias of more male data than female data.
