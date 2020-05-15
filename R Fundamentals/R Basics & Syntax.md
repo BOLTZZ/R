@@ -295,4 +295,14 @@ cor(variable_1, variable_2)
 lm(predicting_variable ~ variables_using_to_predict, data = dataset)
 #  The do() function serves as a bridge between R functions, like lm(), and the tidyverse.
 do(lm(R ~ BB, data = Teams))
+# The createDataPartition() randomly splits data.
+createDataParition(y_value_outcome_value_, times = 1, p = 0.5, list = FALSE) # arg times = how many random samples of indexes to return; arg p = proportion of index represented; arg list = indexes returnes as a list or not.
+# Finds the confusion matrix:
+confusionMatrix(data = y_hat, reference = test_set$sex) # The function expects factors as inputs and the 1st level is considered the positive outcome or y = 1. In this case, female is positive since it comes before male alphabetically.
+# Finds the F1 value:
+F_meas(data = y_hat, reference = factor(train_set$sex)) #Since beta defaults to 1 we don't need to change the value of beta.
+# Finds the specificity of a prediction:
+specificity(predicted_outcome_data, actual_data)
+# Finds the sensitivity of a predciction:
+sensitivity(predicted_outcome_data, actual_data)
 ```
