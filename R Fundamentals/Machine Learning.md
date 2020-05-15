@@ -73,7 +73,43 @@ y_hat <- ifelse(test_set$height > best_cutoff, "Male", "Female") %>%
 y_hat <- factor(y_hat)
 mean(y_hat == test_set$sex)
 ```
-
+* Overall Accuracy for 2 features (Petal width and length) in a different datset:
+```r
+# Load libraries and set everything up:
+library(caret)
+data(iris)
+iris <- iris[-which(iris$Species=='setosa'),]
+y <- iris$Species
+# Plot a graph of different features (Sepal length and width, Petal length and width) combinations to see what features combinations could be good.
+plot(iris,pch=21,bg=iris$Species)
+# From the plot Petal.Length and Petal.Width look like a good combination.
+# Create testing and training data:
+set.seed(2)
+test_index <- createDataPartition(y,times=1,p=0.5,list=FALSE)
+test <- iris[test_index,]
+train <- iris[-test_index,]
+# Generate a sequence of cutoffs for petal length and width:            
+petalLengthRange <- seq(range(train$Petal.Length)[1],range(train$Petal.Length)[2],by=0.1)
+petalWidthRange <- seq(range(train$Petal.Width)[1],range(train$Petal.Width)[2],by=0.1)
+# Create a function to find the best cutoff for petal length:
+length_predictions <- sapply(petalLengthRange,function(i){
+		y_hat <- ifelse(train$Petal.Length>i,'virginica','versicolor')
+		mean(y_hat==train$Species)
+	})
+length_cutoff <- petalLengthRange[which.max(length_predictions)] # 4.7
+# Create a function to find the best cutoff for petal width
+width_predictions <- sapply(petalWidthRange,function(i){
+		y_hat <- ifelse(train$Petal.Width>i,'virginica','versicolor')
+		mean(y_hat==train$Species)
+	})
+width_cutoff <- petalWidthRange[which.max(width_predictions)] # 1.5
+# Find the overall accuracy of either greater than length cutoff OR width cutoff. Acuraccy = 88%
+y_hat <- ifelse(test$Petal.Length>length_cutoff | test$Petal.Width>width_cutoff,'virginica','versicolor')
+mean(y_hat==test$Species)
+# Find the overall accuracy of greater than length cutoff AND widht cutoff. Acuraccy = 92%
+y_hat <- ifelse(test$Petal.Length>length_cutoff & test$Petal.Width>width_cutoff,'virginica','versicolor')
+mean(y_hat==test$Species)
+```
 Confusion Matrix:
 * We used a cutoff of 64 inches but the average female if 65 inches tall, so this prediction rule seems wrong. But, generally, overall accuracy can be a deceptive measure. To see this we'll create a *confusion matrix*, which tabulates each combination of prediction and actual value.
 * The confusion matrix can be made using the function table(): ```table(predicted = y_hat, actual = test_set$sex)```. It acutally reveals a problem, computing the accuracy per sex:
@@ -87,8 +123,8 @@ Reveals that there's a very high accuracy for males (~93%) and a very low accura
 * This bias in the dataset can be a big problem in machine learning. If the traning data is biased the algorithm is likely to be biased as well. The test set is also affected because it was derived from the bias dataset. There are serveral ways we can rid of the bias or make sure prevelance doesn't cloud our assesments via the confusion matrix.
 * A general improvment over using overall acurracy is to study sensitivity and specificity seperatley. To define sensitivity and specificity we need a binary outcome. Wehn the outcomes are categorical qe can define these terms for a specific category. Like, in the digits example (reading digits 0 - 9) we can ask for the specificty in the case of correctly predicting 2 as opposed to some other digit.
 * Once we specify a category of intereset then we can think about positive outcomes (Y = 1) and negative outcomes (Y = 0). 
-* *Sensitivity* is defined as the ability of an algorithm to predict a positive outcome when the actual outcome is positive (Ŷ = 1 when Y = 1). Since an algorithm that predicts a positive outcome (Y = 1) no matter what has perfect sensitivity, the metric on its own is not good enough to judge an algorithm. High sensitivity: Y = 1 -> Ŷ = 1.
-* *Specificity* is the ability of an algorithm to predict a negative when the observed outcome is negative (Ŷ = 0 when Y = 0). High specificity: Y = 0 -> Ŷ = 0. Another way to define specificity is the portion of positive calls that're actually positive. In this case, High specificity: Ŷ = 1 -> Y = 1. 
+* *Sensitivity* is defined as the ability of an algorithm to predict a positive outcome when the actual outcome is positive (Ŷ = 1 when Y = 1). Since an algorithm that predicts a positive outcome (Y = 1) no matter what has perfect sensitivity, the metric on its own is not good enough to judge an algorithm. High sensitivity: Y = 1 -> Ŷ = 1. Also, sensitivity() can be used to find the sensitivity of a prediction: ```sensitivity(predicted_outcome_data, actual_data)```.
+* *Specificity* is the ability of an algorithm to predict a negative when the observed outcome is negative (Ŷ = 0 when Y = 0). High specificity: Y = 0 -> Ŷ = 0. Another way to define specificity is the portion of positive calls that're actually positive. In this case, High specificity: Ŷ = 1 -> Y = 1. Also, specificity() can be used to find the specificity of a prediction: ```specificity(predicted_outcome_data, actual_data)```.
 * To provide a precise defintion the 4 entries of the confusion matrix are labeled:
 
 | | Actually Positive | Actually Negative
@@ -133,3 +169,7 @@ This results in a cutoff of 66 inches with a percentage of 61%. The 66 inches cu
 * ROC curves are quite good for comparing methods (guessing or height cutoff) but neither of the measures plotted depend on prevelance. In these cases (where prevelance matters), we might make a *precision-recall plot*, its similar to ROC but precision is plotted against recall:
 <img src = "https://rafalab.github.io/dsbook/book_files/figure-html/precision-recall-1-1.png" width = 400 height = 200>
 The reason guessing method is higher for males than females is because of the bias of more male data than female data.
+
+Conditional Probabilities:
+* In machine learning algorithms we can't predict outcomes perfectly all the time. The most common reason for this is because it's impossible. Most datasets will include groups of observations with the same exact observed values for all predictors, resulting in the same prediction. But, they have different outcomes making it impossible to make the predictions right for all these observations. For example, for any given height (x) you will have both males and females x inches tall so you can't predict them all right. But, we can still build algorithms much better than guessing and, in some cases, better than expert opinion.
+* To achieve this in an optimal way, we make use of probabilistic representations of the problem. Observations with the same observed values for the predictors may not all be the same but, we can assume they all have the same probability of this class or that class.
