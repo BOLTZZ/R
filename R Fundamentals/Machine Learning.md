@@ -360,4 +360,5 @@ polls_2008 %>% ggplot(aes(day, margin)) +
   geom_smooth(color="red", span = 0.15, method.args = list(degree=1))
 ```
 Graph:
+
 <img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/loes_fitted.PNG" width = 400 height = 300>
