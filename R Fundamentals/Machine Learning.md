@@ -448,3 +448,105 @@ bin_X <- (x > 255/2)*1
 ```
 * Now, since we're standarizing the rows or columns we're going to use *vectorization*. If we subtract a vector from a matrix, the first element of each vector is subtracted form first row of the matrix, and so on. The same holds true for other arithmetic operations, so we can scale each row of a matrix like this: ```(x - rowMeans(x)) / rowSds(x)```. This doesn't work for columns and we would have to transpose a matrix, like this: ```t(t(x) - colMeans(x))```. Another function, sweep() takes each entry of a vector from the corresponding row or column: ```x_mean_0 <- sweep(x, 2, colMeans(x)) #Subtracts column mean from each column```. Even though, the default function for sweep() is subtraction you can change it using the FUN argument: ```x_standardized <- sweep(x_mean_0, 2, colSds(x), FUN = "/") # Divide by the standard deviation```.
 * Matrix mulitplication is done with %*%, like this: ```t(x) %*% x```. Or we can compute the cross product of matrix with the crossprod() function: ```crossprod(x)```. To find the inverse of a function we can use solve(): ```solve(crosspod(x))```. And, a qr decomposition can be accessed as: ```qr(x)```.
+
+<strong>Distance, Knn, Cross Validation, and Generative Models:</strong>
+
+Nearest Neighbors:
+* When we cluster animals into subgroups (reptiles, amhphibians, and mammals) we're implicilty defining a distance that allows us to say what animals are close to each other. Many machine learning techniques rely on being able to define distance between observations using features or predictors. 
+* We're going to look at a random sample of 2s and 7s from mnist:
+```r
+if(!exists("mnist")) mnist <- read_mnist()
+ind <- which(mnist$train$labels %in% c(2,7)) %>% sample(500)
+#the predictors are in x and the labels in y
+x <- mnist$train$images[ind,]
+y <- mnist$train$labels[ind]
+```
+* For examples, like smoothing, we're interested in describing distances between observations (digits). Now, to find distance we need to know what the points are. With high dimensional data, points aren't on the Cartesian plan anymore, so we can't visualize them anymore and need to think abstractly. In our digits example, the predictors (<strong>X</strong><sub>i</sub>) are defined as points in 784 dimensional space: <strong>X</strong><sub>i</sub> = (x<sub>i, 1</sub>, ..., x<sub>i, 784</sub>). And, the Euclidian distance for distance between points 1 and 2 is given by this: dist(1, 2) = sqrt(<sup>784</sup>∑<sub>j = 1</sub> (x<sub>1, j</sub> - x<sub>2, j</sub>)<sup>2</sup>).
+* Looking at the first 3 observations, ```y[1:3]``` we can see they're a 7, 7, and a 2. The vector for these 3 observations can be saved in 3 seperate objects:
+```r
+x_1 <- x[1,]
+x_2 <- x[2,]
+x_3 <- x[3,]
+```
+* We excepect the distances between the same number (7 and 7) to be smaller than the distances between 2 different numbers:
+```r
+sqrt(sum((x_1 - x_2)^2))
+# Returns a distance of 2080
+sqrt(sum((x_1 - x_3)^2))
+# Returns a distance of 2252
+sqrt(sum((x_2 - x_3)^2))
+# Returns a distance of 2643
+# A faster way to compute this is using crossprod() and matrix algebra:
+sqrt(crossprod(x_1 - x_2))
+sqrt(crossprod(x_1 - x_3))
+sqrt(crossprod(x_2 - x_3))
+# Also, we can compute all the distances between all the observations at once by using the function, dist().
+# If you feed it a matrix, the dist() computes the distance between each row and produces an object of class dist:
+d <- dist(x)
+# Now, we can corece the dist object into a matrix:
+as.matrix(d)[1:3,1:3]
+# We can see an image of the distances:
+image(as.matrix(d))
+# Order the distance by labels:
+image(as.matrix(d)[order(y), order(y)])
+# Compute distance between predictors:
+d <- dist(t(x))
+dim(as.matrix(d))
+# From the dim() the matrix is 784 by 784
+d_492 <- as.matrix(d)[492,]
+image(1:28, 1:28, matrix(d_492, 28, 28))
+```
+* The *k-nearest neighbor* estimates the conditional probabilities in a similar way to bin smoothing. However, kNN is easier to adapt to multiple dimensions. For any point which you want to estimate the conditional probability you look at the k-nearest points then find the average of these points, referred to as the *neighborhood*, due to the connection between condtional expectations and conditional probabilites, this gives us the estimated conditional probability. We can control the flexibility of the estimate via k, a large k results in a smoother estimate and a smaller k results in a more flexible but wigglier estimate.
+* We'll go back to the digits dataset with 2s and 7s. We can think of the conditional probability of being a 7 (y<sub>1</sub>) given the 2 predictors: p(x<sub>1</sub>, x<sub>2</sub>) = Pr(Y = 1 | X<sub>1</sub> = x<sub>1</sub>, X<sub>2</sub> = x<sub>2</sub>). The 0s and 1s we observe are *noisy* because some of the regions of the conditional probability aren't close to 0 or 1, which means you can go either way sometimes. So we have to estimate the conditional probability, we can try to do k nearest neighbors for this. It'll be compared to logisitc regression, so to be better, it needs to beat out logistic regression. We can use to below code to find the accuracy for logistic regression:
+```r
+library(caret)
+fit_glm <- glm(y~x_1+x_2, data=mnist_27$train, family="binomial")
+p_hat_logistic <- predict(fit_glm, mnist_27$test)
+y_hat_logistic <- factor(ifelse(p_hat_logistic > 0.5, 7, 2))
+confusionMatrix(data = y_hat_logistic, reference = mnist_27$test$y)$overall[1]
+```
+* The accuracy for logistic regression is 76%. To use the knn algorithm we'll use the function knn3(), we can call it in 1 of 2 ways, the first specifying a formula (outcome ~ predictor_1 + predictor_2 + predictor_3, to use all the predictors do: y ~ .) and the data frame (all the data to be used): ```knn_fit <- knn3(y ~ ., data = mnist_27$train)```, the second way would be a matrix of predictors and a vector of the outcomes:
+```r
+x <- as.matrix(mnist_27$train[,2:3])
+y <- mnist_27$train$y
+knn_fit <- knn3(x, y)
+```
+* The 1st approach is a quicker, simpler way to write it when we're in a hurry. But, the 2nd appraoch is for large data sets. We need to pick the number of neighbors to include (the default is k = 5), we can use the default: ```knn_fit <- knn3(y ~ ., data = mnist_27$train, k=5)```. Since the data set is balanced (# of 2s and 7s are equal) and we care about specificity just as much as we care about specificity (both mistakes are equally bad) we'll use accuracy to quantify performance. The predict function produces either a probability for each class or it can produce the outcome with the highest probability: 
+```r
+y_hat_knn <- predict(knn_fit, mnist_27$test, type = "class") # The fitted object is knn_fit and the type argument sets the predict function to return the probability for each class or just highest probability.
+confusionMatrix(data = y_hat_knn, reference = mnist_27$test$y)$overall["Accuracy"]
+```
+* The confusion matrix returns an accuracy of 81.5% which is better than the logistic regression. 
+* We can analyze why the knn did better than the logistic regression. Visualization of true conditional probability and knn with 5 neighbors estimate:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/knn-fit-1.png" width = 500 height = 300>
+
+* The knn 5 estimate has the essence of the shape of the true probability unlike, the logistic regression. But, we can still do better since you can spot some blue specks in the red area which is due to *overtraining*. If you find the accuracies for training and test set you see that the accuracy for the training set is 88.2% while the test set is 81.5%, which is a pretty susbtantial difference. The reason for the big difference is because we overtrained. Overtraining is at its worst when k = 1, the estimate is obtained with just the y corresponding to that point (since only 1 point is the closest neighbor). When k = 1, we'll obtain practically perfect accuracy in the training set because each point is used to predict itself. Perfect accuracy will occur when there are enough unique predictors, the accuracy for the training data when k = 1 is 99.4% but the accuracy for the test set is 73.5%, lower than with logistic regression. The estimated conditional probability follows the training data too closely, messing up the accuracy for the test set. We see this overtaining with k = 5 so we should change it a larger k. Let's try k = 401 and the accuracy for the test data is 79%, close to logisitic regression:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/mnist-27-glm-est-1.png" width = 500 height = 300>
+
+* The size of k is so large it doesn't permit enough flexibility for knn, almost half the data is used to compute each conditional probability. This is called *over smoothing*. To find the perfect value for k we can repeat and find the accuracies for many different values of k, we can use the map_df() to repeat for each k:
+```r
+ks <- seq(3, 251, 2)
+library(purrr)
+accuracy <- map_df(ks, function(k){
+    fit <- knn3(y ~ ., data = mnist_27$train, k = k)
+    y_hat <- predict(fit, mnist_27$train, type = "class")
+    cm_train <- confusionMatrix(data = y_hat, reference = mnist_27$train$y)
+    train_error <- cm_train$overall["Accuracy"]
+    y_hat <- predict(fit, mnist_27$test, type = "class")
+    cm_test <- confusionMatrix(data = y_hat, reference = mnist_27$test$y)
+    test_error <- cm_test$overall["Accuracy"]
+    
+tibble(train = train_error, test = test_error)
+    })
+})
+# We can graph it:
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/accuracy-vs-k-knn-1.png" width = 400 height = 300>
+
+* The jaggedness is due to the fact the accuracy is computed on this sample and is a random variable. This is why it's preferred to minimize the expectation loss rather than the loss experienced with 1 data set. We can still draw out a pattern, low values of k give a low test set accuracy and high train set accuracy (overtraining), and large values of k result in low accuracy (over smoothing). We can find the maximum accuracy and optimal k:
+```r
+#pick the k that maximizes accuracy using the estimates built on the test data
+ks[which.max(accuracy$test)]
+max(accuracy$test)
+```
+* The maximum accuracy is 85% and the optimal k is 41. But, there is a big problem since we broke a very important rule of machine learning, we selected the k based on the test set. For this, we'll use cross-validation which provides a way to estimate the expected loss for a given method using only the training set.
