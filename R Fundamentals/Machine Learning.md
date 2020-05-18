@@ -550,3 +550,91 @@ ks[which.max(accuracy$test)]
 max(accuracy$test)
 ```
 * The maximum accuracy is 85% and the optimal k is 41. But, there is a big problem since we broke a very important rule of machine learning, we selected the k based on the test set. For this, we'll use cross-validation which provides a way to estimate the expected loss for a given method using only the training set.
+
+Cross-Validation:
+* With 1 dataset the MSE (mean squared error) can be estimated from the observed mean square error, referred to as the true error and apparent error, respectivley. There are 2 important characteristics of the apparent error, the dataset is a random variable so the apparent error is a random variable (so an algorithm having lower apparent error might be due to luck). Also, if we train an algorithm on the same dataset we used to compute the apparent error we might be overtraining, this will make the apparent error an underestimate of the true error. 
+* Cross validation allows us to try to get rid of these problems. It helps to think of the true errror as the average of many apparent errors obtained by applying the algorithm to new, random samples of the data (none of them used to train the algorithm). The idea of cross validation is to imitate this theoretical setup the best we can with the data at hand. To do this we need to generate a series of random samples, the general idea for this is to randomly generate smaller data sets that aren't used for training but used to estimate the true error.
+* One approach for cross validation is the *k-fold cross validation*. We divide our whole data set into training and testing sets, the training set will be used, exclusivley, for training the algorithm and the test set will be used to only evaluate the algorithm. The test set is usually a smaller portion of the data set so the training algorithm can be trained on as much data as possible. But, we need the test to be large so stable estimates of the loss can be obtained (typical size for test set is 10% - 20%). 
+* Do NOT use the test set when training, not for filtering rows, not for selecting features, nothing. But, for most machine learning algorithms we need to select parameters, like the number of neighbors (k) in the k nearest neighbors algorithm. The set of parameters will be represented by λ. So, lambda (algorithm parameters) needs to be optimized without using the test or training (results in overtraining) tests. For each set of algorithm parameters being considered, we want an estimate of the MSE and then we will choose the parameters with the smallest MSE. It's important that before starting the cross-validation process the algorithm parameters are fixed. In k-fold cross validation, we randomly split the observations into k non-overlapping sets, and repeat the calculation for MSE for each of these sets. Then, we compute the average MSE and obtain an estimate of our loss. Finally, we can select the optimal parameter that minimized the MSE.
+<img src = "https://rafalab.github.io/dsbook/ml/img/cv-4.png" width = 400 height = 300>
+
+* We can compute the apparent error on the independent validation set. But, 1 sample won't be enough and k should be equal to 5 or 10 since even though larger values of k might seem preferable they take a lot more computational time:
+<img src = "https://rafalab.github.io/dsbook/ml/img/cv-5.png" width = 400 height = 400>
+
+Example code of knn:
+```r
+data("tissue_gene_expression")
+# Tissue gene expression data
+# Train the data using knn algorithm and ks ranging from 1 to 7 by 2s:
+fit <- with(tissue_gene_expression, train(x, y, method = "knn", tuneGrid = data.frame( k = seq(1, 7, 2))))
+ggplot(fit)
+fit$results
+# fit$results this:
+ k  Accuracy     Kappa AccuracySD    KappaSD
+1 1 0.9932750 0.9918380 0.01078706 0.01310649
+2 3 0.9842622 0.9809356 0.01444307 0.01754692
+3 5 0.9699980 0.9636815 0.02356627 0.02846193
+4 7 0.9617830 0.9537574 0.03046585 0.03686224
+```
+
+* After finding all the MSEs for each k we calculate the average and this gives an estimate of the loss. One more step would be to select the lambdas (parameters) that minimize the MSE. But, the optimization occured on the training data so we need to compute an estimate of the final algorithm based on data that wasn't used to optimize this choice. So, we'll use the test set:
+<img src = "https://rafalab.github.io/dsbook/ml/img/cv-6.png" width = 400 height = 300>
+
+* We'll compute cross-validation on the test set but, this won't be for optimization purposes (unlike the training set) but to know the MSE for the final algorithm. However, to calculate the MSE for the final algorithm we need to go through the cross-validation k times:
+<img src = "https://rafalab.github.io/dsbook/ml/img/cv-7.png" width = 400 height = 300>
+
+* Once, we're satisfied with our model we can refit the model on the entire data set without changing the parameters:
+<img src = "https://rafalab.github.io/dsbook/ml/img/cv-8.png" width = 400 height = 300>
+
+* There is another approach, the *boostrap* approach, which is the default approach in the caret package. It's useful since it can improve the variance of the final estimate by taking more, overlapping samples (picking k sets at some size). Also, this picks observations with replacement which means the same observation can appear twice.
+* Suppose the income distribution of the population is:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/income-distribution-1.png" width = 400 height = 300>
+
+* The median of our population is ~ 45,000. Let's say we don't have access to the entire population but want to estimate the median (M). We can take a sample of 250 and estimate the population median with the sample median, which results in ~ 43,000, let's try to build confidence intervals. From a Monte Carlo simulation we can see the sample median is approximatley normal. But, in practice we don't have access to the distribution and the CLT doesn't apply to the median, only averages.
+* The *bootstrap* permits us to create a Monte Carlo simulation without access to the entire distribution. We act as if the sample is the entire population and sample, with replacement, data sets of the same size. Then, we can compute the summary statistic (median) on the bootstrap sample. The theory tells us the distribution of the statistic obtained with the bootstrap sample approximates the distribution of the actual statistic (population):
+```r
+N <- 250
+X <- sample(income, N)
+M<- median(X)
+# Bootstrap monte carlo sim:
+B <- 10^4
+M_star <- replicate(B, {
+    X_star <- sample(X, N, replace = TRUE)
+    median(X_star)
+})
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/median-is-normal-1.png" width = 400 height = 300>
+
+* The bootstrap sample creates a close estimate of the distribution, providing a decent approximation. Also, we can create the 95% confidence intervals: ```#This creates the actual confidence intervals: quantile(M, c(0.05, 0.95)) #This creates the bootstrap confidence intervals: quantile(M_star, c(0.05, 0.95))```. The confidence intervals from the bootstrap are quite close to the actual ones. This is much better than using the CLT and if we know the distribution is normal we can use the bootstrap to estimate sd, mean, and then confidence interval. Also, the bootstrap is particularly useful in situations in which a tractable variance formula does NOT exist.
+* Another bootstrap example of finding the standard error (sd) and expected value (mean) of random, normally distributed data set. When Monte Carlo cannot be run:
+```r
+# Set the seet to randomly generate a normally distributed data set:
+set.seed(1)
+y <- rnorm(100, 0, 1)
+# Set the seed, again, to create the indicies:
+set.seed(1, sample.kind="Rounding")
+# Create the 10 bootstrap indexes based on y:
+indexes <- createResample(y, 10)
+# Apply each index (ind) in indexes to y, then use quantile of 75% to help find the expected value and standard error of 75%
+q_75_star <- sapply(indexes, function(ind){
+	# Set an an object (y_star) equal to y[ind]
+	y_star <- y[ind]
+	# Find the quantile of y_star and 0.75
+	quantile(y_star, 0.75)
+})
+# Find the expected value, using mean, which is ~0.731:
+mean(q_75_star)
+# Find the standard error, using sd, which is ~0.0742:
+sd(q_75_star)
+# Repeating, the same bootstrap thing with 10,000 bootstrap samples results in the following expected value and standard errror:
+# Expected value ~ 0.674
+# Standard error ~ 0.0931
+```
+Generative Models:
+* In non-binary circumstances, the conditional probabilites or expectations provide the best approach to developing a decision rule. But, in a binary case the best approach is *Bayes' rule* (p(<strong>x</strong>) = Pr(Y = 1 | <strong>X</strong> = <strong>x</strong>)), which is a decision rule based on the true condtional probability. 
+* *Discriminative approaches* estimate the conditional probability directly and do not consider the distribution of the predictors. But, Bayes' theorem tells us knowing the distribution of predictors (<strong>X</strong>) may be useful. *Generative models* are approaches that model the joint distribution of Y (outcomes) and <strong>X</strong> (predictors). Bayes' rule implies that if the distributions of the predictors (conditional distributions) can be estimated then a powerful decision realm can be created. 
+* Bayes' rule with f<sub>X|Y = 1</sub>:
+
+![p(x) = Pr(Y = 1|X = x) = \frac{f_{X|Y=1}(X)Pr(Y = 1)}{f_{X|Y=0}(X)Pr(Y = 0) + f_{X|Y=1}(X)Pr(Y = 1)}](https://render.githubusercontent.com/render/math?math=p(x)%20%3D%20Pr(Y%20%3D%201%7CX%20%3D%20x)%20%3D%20%5Cfrac%7Bf_%7BX%7CY%3D1%7D(X)Pr(Y%20%3D%201)%7D%7Bf_%7BX%7CY%3D0%7D(X)Pr(Y%20%3D%200)%20%2B%20f_%7BX%7CY%3D1%7D(X)Pr(Y%20%3D%201)%7D)
+
+* 
