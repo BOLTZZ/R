@@ -633,8 +633,155 @@ sd(q_75_star)
 Generative Models:
 * In non-binary circumstances, the conditional probabilites or expectations provide the best approach to developing a decision rule. But, in a binary case the best approach is *Bayes' rule* (p(<strong>x</strong>) = Pr(Y = 1 | <strong>X</strong> = <strong>x</strong>)), which is a decision rule based on the true condtional probability. 
 * *Discriminative approaches* estimate the conditional probability directly and do not consider the distribution of the predictors. But, Bayes' theorem tells us knowing the distribution of predictors (<strong>X</strong>) may be useful. *Generative models* are approaches that model the joint distribution of Y (outcomes) and <strong>X</strong> (predictors). Bayes' rule implies that if the distributions of the predictors (conditional distributions) can be estimated then a powerful decision realm can be created. 
-* Bayes' rule with f<sub>X|Y = 1</sub>:
+* Bayes' rule with f<sub><strong>X</strong>|Y = 1</sub> and f<sub><strong>X</strong>|Y = 0</sub> representing the distribution functions of the predictor <strong>X</strong> for the two classes Y=1 and Y=0:
 
 ![p(x) = Pr(Y = 1|X = x) = \frac{f_{X|Y=1}(X)Pr(Y = 1)}{f_{X|Y=0}(X)Pr(Y = 0) + f_{X|Y=1}(X)Pr(Y = 1)}](https://render.githubusercontent.com/render/math?math=p(x)%20%3D%20Pr(Y%20%3D%201%7CX%20%3D%20x)%20%3D%20%5Cfrac%7Bf_%7BX%7CY%3D1%7D(X)Pr(Y%20%3D%201)%7D%7Bf_%7BX%7CY%3D0%7D(X)Pr(Y%20%3D%200)%20%2B%20f_%7BX%7CY%3D1%7D(X)Pr(Y%20%3D%201)%7D)
 
-* 
+* We can use the heights dataset for Naive Bayes (generative model) since the conditional distributions of the predictors are normal:
+```r
+# Generating train and test set
+library("caret")
+data("heights")
+y <- heights$height
+set.seed(2)
+test_index <- createDataPartition(y, times = 1, p = 0.5, list = FALSE)
+train_set <- heights %>% slice(-test_index)test_set <- heights %>% slice(test_index)
+
+# Estimating averages and standard deviations
+params <- train_set %>%
+ group_by(sex) %>%
+ summarize(avg = mean(height), sd = sd(height))
+params
+
+# Estimating the prevalence
+pi <- train_set %>% summarize(pi=mean(sex=="Female")) %>% pull(pi)
+pi
+
+# Getting an actual rule
+x <- test_set$height
+f0 <- dnorm(x, params$avg[2], params$sd[2])
+f1 <- dnorm(x, params$avg[1], params$sd[1])
+# Above finds the distribution of f0 and f1
+p_hat_bayes <- f1*pi / (f1*pi + f0*(1 - pi))
+```
+* Naive Bayes allows us to take into account prevelance (π), the hats (^) will be used to denote our estimates:
+
+![\hat{p}(x) = Pr(Y = 1|X = x) = \frac{\hat{f}_{X|Y=1}(x)\hat{\pi}}{\hat{f}_{X|Y=0}(x)(1-\hat{\pi}) + \hat{f}_{X|Y=1}(x)Pr(Y = 1)}](https://render.githubusercontent.com/render/math?math=%5Chat%7Bp%7D(x)%20%3D%20Pr(Y%20%3D%201%7CX%20%3D%20x)%20%3D%20%5Cfrac%7B%5Chat%7Bf%7D_%7BX%7CY%3D1%7D(x)%5Chat%7B%5Cpi%7D%7D%7B%5Chat%7Bf%7D_%7BX%7CY%3D0%7D(x)(1-%5Chat%7B%5Cpi%7D)%20%2B%20%5Chat%7Bf%7D_%7BX%7CY%3D1%7D(x)Pr(Y%20%3D%201)%7D)
+
+* Our sample has a very small prevelance for females (~23%) which would not work on the population. The low sensitivity can affect the algorithm since it will predict males much more than females. Which can change the prevelance by changing the value of π:
+```r
+# Changing the Naive Bayes estimate:
+p_hat_bayes_unbiased <- f1 * 0.5 / (f1 * 0.5 + f0 * (1 - 0.5))
+# Changing the cutoff rule:
+y_hat_bayes_unbiased <- ifelse(p_hat_bayes_unbiased > 0.5, "Female", "Male")
+```
+* Quadratic discriminant analysis (QDA) is a version of Naive Bayes in which we assume that the distributions (f<sub><strong>X</strong>|Y = 1</sub> and f<sub><strong>X</strong>|Y = 0</sub>) are multivariate normal. 
+* We can use the digit reader example with 2 digits/outcomes 2s and 7s. We assume the conditional distribution is bivariate normal which is a sub category of multivariate normal disribution. This implies we need to estimate 2 averages, 2 standard deviatsions, and a correlation for each case (2s and 7s). Once we have these we can approximate the conditional distributions f<sub><strong>X</strong><sub>1</sub>, <strong>X</strong><sub>2</sub>|Y = 1</sub> and f<sub><strong>X</strong><sub>1</sub>, <strong>X</strong><sub>2</sub>|Y = 0</sub>:
+```r
+# Estimate parameters from the data
+params <- mnist_27$train %>%
+ group_by(y) %>%
+ summarize(avg_1 = mean(x_1), avg_2 = mean(x_2),
+        sd_1 = sd(x_1), sd_2 = sd(x_2),
+        r = cor(x_1, x_2))
+params
+# y  avg_1  avg_2  sd_1   sd_2    r
+# 2  .129   .283   .0702  .0578  .401
+# 7  .234   .288   .0719  .105   .455
+```
+* Visual of both densities (curve encapsulates 95% of the points):
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/qda-explained-1.png" width = 400 height = 300>
+
+* Once these 2 distributions are estimated, this defines an estimate for the conditional probability of Y = 1 | <strong>X</strong><sub>1</sub> & <strong>X</strong><sub>2</sub>. The model can be fitted and used to obtain predictors:
+```r
+# Fit model
+library(caret)
+train_qda <- train(y ~., method = "qda", data = mnist_27$train)
+# Obtain predictors and accuracy
+y_hat <- predict(train_qda, mnist_27$test)
+confusionMatrix(data = y_hat, reference = mnist_27$test$y)$overall["Accuracy"]
+```
+* The estimated conditional probability is pretty close to the true probability. Though, its not good as the fit obtained with kernel smoothers:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/qda-estimate-1.png" width = 400 height = 300>
+
+* One reason why QDA doesn't work as well as the kernel approach, in this case, is because the assumptions of normality don't seem to hold (we assumed a bivariate normal distribution for the 2s and 7s), the 7 seems to be off:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/qda-does-not-fit-1.png" width = 400 height = 300>
+
+* QDA becomes harder to use as the number of predictors increase. In our case, we had 2 predictors and, in total, had to 2 compute 4 means, 4 standard deviations, and 2 correlations. With 10 predictors we have 45 correlations for each class! This formula: K * (2p + p * (p - 1)/2) tells us how many parameters we have to estimate. Once the number of parameters approach the size of the data, the method becomes impractical due to overfitting.
+* A solution for having too many parameters is to assume the correlation structure is the same for all classes, reducing the number of parameters needed to estimate. In the 2s and 7s example we would just have to compute 2 means and 2 standard deviations:
+```r
+params <- mnist_27$train %>%
+ group_by(y) %>%
+ summarize(avg_1 = mean(x_1), avg_2 = mean(x_2),
+        sd_1 = sd(x_1), sd_2 = sd(x_2),
+        r = cor(x_1, x_2))
+params <- params %>% mutate(sd_1 = mean(sd_1), sd_2 = mean(sd_2), r = mean(r))
+params
+# y  avg_1  avg_2  sd_1   sd_2    r
+# 2  .129   .283   .0710  .0813  .428
+# 7  .234   .288   .0710  .0813  .428
+```
+* Visual of densities for each case. The size of the ellipses and angles are same because of same standard deviation and correlation:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/lda-explained-1.png" width = 400 height = 300>
+
+* When this assumption is forced, mathematically, the boundary is aligned like, logisitic regression. For this reason, the method is called linear discriminant analysis (LDA). Conditional probability with LDA:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/lda-estimate-1.png" width = 400 height = 300>
+
+* The lack of flexibility doesn't allow for a good estimate and the accuracy is quite low, ~ 75%.
+* Now, we'll use the same digits datset but, with 1s, 2s, and 7s this time, which can be obtained like this:
+```r
+if(!exists("mnist"))mnist <- read_mnist()
+
+set.seed(3456)    #use set.seed(3456, sample.kind="Rounding") in R 3.6 or later
+index_127 <- sample(which(mnist$train$labels %in% c(1,2,7)), 2000)
+y <- mnist$train$labels[index_127] 
+x <- mnist$train$images[index_127,]
+index_train <- createDataPartition(y, p=0.8, list = FALSE)
+
+# get the quadrants
+# temporary object to help figure out the quadrants
+row_column <- expand.grid(row=1:28, col=1:28)
+upper_left_ind <- which(row_column$col <= 14 & row_column$row <= 14)
+lower_right_ind <- which(row_column$col > 14 & row_column$row > 14)
+
+# binarize the values. Above 200 is ink, below is no ink
+x <- x > 200 
+
+# cbind proportion of pixels in upper right quadrant and proportion of pixels in lower right quadrant
+x <- cbind(rowSums(x[ ,upper_left_ind])/rowSums(x),
+           rowSums(x[ ,lower_right_ind])/rowSums(x)) 
+
+train_set <- data.frame(y = factor(y[index_train]),
+                        x_1 = x[index_train,1],
+                        x_2 = x[index_train,2])
+
+test_set <- data.frame(y = factor(y[-index_train]),
+                       x_1 = x[-index_train,1],
+                       x_2 = x[-index_train,2])
+```
+* Graph of predictors and outcomes:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/mnist-27-training-data-1.png" width = 400 height = 300>
+
+* We can fit a QDA model and now we have to estimate 3 conditional probabilites and then predict the digit with the highest probability. The predictors have 3 classes (1s, 2s, and 7s) and for sensitivity and specificity we have a pair of values for each class since to define these terms we need a binary outcome so there are 3 outcomes, one for the corresponding class a positive and the other 2 as negatives:
+```r
+# Fit the qda model on the dataset:
+train_qda <- train(y ~ ., method = "qda", data = train_set)
+# Predict the values:
+predict(train_qda, test_set, type = "prob") %>% head()
+predict(train_qda, test_set) %>% head()
+# Accuracy is 75%:
+confusionMatrix(predict(train_qda, test_set), test_set$y)$overall["Accuracy"]
+```
+* We can visualize the estimated conditional probabilities for qda:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/three-classes-plot-1.png" width = 400 height = 300>
+
+* We can do the same visualization for lda and see the accuracy (66%) is much worse because the model is more rigid:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/lda-too-rigid-1.png" width = 400 height = 300>
+
+* The knn does the best as its model is the most flexible and has an accuracy of 77%:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/three-classes-knn-better-1.png" width = 400 height = 300>
+
+* The reason qda and, especially, lda aren't working well is due to lack of fit. Plotting the data shows that, at least, the 1s aren't bivariate normally distributed:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/three-classes-lack-of-fit-1.png" width = 400 height = 300>
+
+* Generative models can be really powerful. But, only when the join distribution of predictors each class can be succesfully approximated.
