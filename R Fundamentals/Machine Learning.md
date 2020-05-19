@@ -566,7 +566,7 @@ Example code of knn:
 data("tissue_gene_expression")
 # Tissue gene expression data
 # Train the data using knn algorithm and ks ranging from 1 to 7 by 2s:
-fit <- with(tissue_gene_expression, train(x, y, method = "knn", tuneGrid = data.frame( k = seq(1, 7, 2))))
+fit <- with(tissue_gene_expression, train(x, y, method = "knn", tuneGrid = data.frame(k = seq(1, 7, 2))))
 ggplot(fit)
 fit$results
 # fit$results this:
@@ -576,7 +576,34 @@ fit$results
 3 5 0.9699980 0.9636815 0.02356627 0.02846193
 4 7 0.9617830 0.9537574 0.03046585 0.03686224
 ```
-
+Another example of knn:
+```r
+set.seed(1, sample.kind = "Rounding")
+library(caret)
+# Set the columns of tissue gene expression to variables
+y <- tissue_gene_expression$y
+x <- tissue_gene_expression$x
+# Create an index using data partition on y to ONLY get the outcomes and not the entire datset:
+test_index <- createDataPartition(y, list = FALSE)
+# Use the created indicies from test_index to create a series of train and test set y's and x's:
+train_set_y <- y[-test_index]
+test_set_y <- y[test_index]
+train_set_x <- x[-test_index, ]
+test_set_x <- x[test_index, ]
+# Use sapply() to apply to each value of knn, raninging for 1 to 11 with an increment of 2:
+accuracies = sapply(seq(1, 11, 2), function(k){
+	# Fit the knn model on the trainin set x's and y's with the correct k:
+	fit <- knn3(train_set_x, train_set_y, k = k)
+	# Predict using the fitted model and using the test_set_x (converted to a data frame)
+	y_hat <- predict(fit, as.data.frame(test_set_x), type = "class")
+	# Find the mean of y_hat == test_set_y, so your finding the accuracies of each k:
+	mean(y_hat == test_set_y)
+})
+accuracies
+# Prints out:
+# k value:      1         3        5         7         9         11
+# accuracy: 0.9895833 0.9687500 0.9479167 0.9166667 0.9166667 0.9062500
+```
 * After finding all the MSEs for each k we calculate the average and this gives an estimate of the loss. One more step would be to select the lambdas (parameters) that minimize the MSE. But, the optimization occured on the training data so we need to compute an estimate of the final algorithm based on data that wasn't used to optimize this choice. So, we'll use the test set:
 <img src = "https://rafalab.github.io/dsbook/ml/img/cv-6.png" width = 400 height = 300>
 
@@ -785,5 +812,23 @@ confusionMatrix(predict(train_qda, test_set), test_set$y)$overall["Accuracy"]
 <img src = "https://rafalab.github.io/dsbook/book_files/figure-html/three-classes-lack-of-fit-1.png" width = 400 height = 300>
 
 * Generative models can be really powerful. But, only when the join distribution of predictors each class can be succesfully approximated.
-
+* I'll show you another example of a generative model, with lda, we're trying to predict the correct tissue type (y) based on a sample of 10 other tissues:
+```r
+# Load up the proper libraries, data, and set the seed:
+library(dslabs)      
+library(caret)
+data("tissue_gene_expression")
+set.seed(1993, sample.kind="Rounding") 
+# Set the y column of tissue_gene_expression to a variable (y), which are the outcomes:
+y <- tissue_gene_expression$y
+# Set the x column of tissue_gene_expression to a variable (x), which are the predictors:
+x <- tissue_gene_expression$x
+# Take a sample of 10 from x:
+x <- x[, sample(ncol(x), 10)]
+# Fit an lda model on x and y. Also, center/scale each column using the preProcess argument:
+fit_lda <- train(x, y, method = "lda", preProcess = c("center"))
+# Find the accuracy, which is ~ 82%
+fit_lda$results["Accuracy"]
+```
 <strong>Classification With More Than 2 Classes And The Caret Package:</strong>
+
