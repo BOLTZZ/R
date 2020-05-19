@@ -785,3 +785,5 @@ confusionMatrix(predict(train_qda, test_set), test_set$y)$overall["Accuracy"]
 <img src = "https://rafalab.github.io/dsbook/book_files/figure-html/three-classes-lack-of-fit-1.png" width = 400 height = 300>
 
 * Generative models can be really powerful. But, only when the join distribution of predictors each class can be succesfully approximated.
+
+<strong>Classification With More Than 2 Classes And The Caret Package:</strong>
