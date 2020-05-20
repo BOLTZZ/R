@@ -175,7 +175,7 @@ Conditional Probabilities:
 * To achieve this in an optimal way, we make use of probabilistic representations of the problem. Observations with the same observed values for the predictors may not all be the same but, we can assume they all have the same probability of this class or that class. 
 * The probabilistic representations can be written out mathematically for categorical data: (X<sub>1</sub> = x<sub>1</sub>, ..., X<sub>p</sub> = x<sub>p</sub>) for observed values <strong>x</strong> = (x<sub>1</sub>, ..., x<sub>p</sub>) and for covariates/predictors <strong>X</strong> = (X<sub>1</sub>, ..., X<sub>p</sub>). This doesn't imply the outcome (y) will take a specific value but, rather, it implies a specific probability. The *conditional probabilities* for each class (k) are mathematically denoted as: Pr(Y = k | X<sub>1</sub> = x<sub>1</sub>, ..., X<sub>p</sub> = x<sub>p</sub>), for k = 1, ..., K. Using the bolded letters the mathematical denotion can be rewritten as: pk(<stron>x</strong>) = Pr(Y = k | <strong>X</strong> = <strong>x</strong> ), for k = 1, ..., K. p(x) will represent conditional probabilities as functions, make sure to not confuse this with the p that's used to represent the number of predictors.
 * Knowing these probabilities can help guide the construction of an algorithm that makes the best prediction. For any given <strong>X</strong> (set of predictors) predict the class k with the largest probability among p<sub>1</sub>(x), p<sub>2</sub>(x), ..., p<sub>K</sub>(x) with the mathematical notation being: Ŷ = max<sub>k</sub>p<sub>k</sub>(x). But, we don't know the p<sub>k</sub>(x), in fact, this is one of the main problems of machine learning. 
-* The better the algorithm estimates p̂<sub>k</sub>(x), the better the predictor, Ŷ = max<sub>k</sub>p̂<sub>k</sub>(x), will be. How good the prediction wil be will depend on 2 things, how close the maximum probability (max<sub>k</sub>p̂<sub>k</sub>(x)) is to 1 and how close the estimates, p̂<sub>k</sub>(x), are to the acutal probabilites, p<sub>k</sub>(x). Nothing can be done about the 1st restriction (determined by the nature of the problem) but, for the 2nd one we need to find the best way to estimate conditional probabilities. While some algorithms can get perfect accuracy (digit readers) other have success restricted by the randomness of the process (1st restriction). Also, defining the prediction by maximing the probability isn't always optimal and depends on the context, like sensitivity and specificity may differ in importance. But, even in these cases, having a good estimate of conditional proabilities will suffice to build an optimal prediction model since sensitivity and specificity can be controlled.
+* The better the algorithm estimates p̂<sub>k</sub>(x), the better the predictor, Ŷ = max<sub>k</sub>p̂<sub>k</sub>(x), will be. How good the prediction wil be will depend on 2 things, how close the maximum probability (max<sub>k</sub>p̂<sub>k</sub>(x)) is to 1 and how close the estimates, p̂<sub>k</sub>(x), are to the acutal probabilites, p<sub>k</sub>(x). Nothing can be done about the 1st restriction (determined by the nature of the problem) but, for the 2nd one we need to find the best way to estimate conditional probabilities. While some algorithms can get perfect accuracy (digit readers) other have success restricted by the randomness of the process (1st restriction). Also, defining the prediction by maximizing the probability isn't always optimal and depends on the context, like sensitivity and specificity may differ in importance. But, even in these cases, having a good estimate of conditional proabilities will suffice to build an optimal prediction model since sensitivity and specificity can be controlled.
 * Pr(Y = 1 | <strong>X</strong> = <strong>x</strong>) as the proportion of 1s in the stratum of the population for which <strong>X</strong> = <strong>x</strong>. Many algorithms can be applied to continous and categorical data due to the connection between conditional probabilities and conditional expectations. 
 * The *conditional expectation* is the average of values (y<sub>1</sub>, ..., y<sub>n</sub>) in the population. In the case, which the y's are 0s or 1s the expectation is equivalent to the probability of randomly picking a 1 since the average is the proportion of 1s. Therefore, the conditional expectation is equal to the conditional probability, E(Y ∣ <strong>X</strong> = <strong>x</strong>) = Pr(Y = 1 ∣ <strong>X</strong> = <strong>x</strong>). Because of that, the conditional expectation is usually only used to denote both conditional expectation and probability.
 * Just like with categorical outcomes, in most applications, the same observed predictors don't guarantee the same continuous outcome. Instead, we assume the outcome follows the same conditional distribution. For continuous outcomes, the best algorithm is based on a *loss function*. The most common one is *squared loss function*, Ŷ = predictor and Y = actual outcome, the squared loss function finds the square of the difference, (Ŷ - Y)<sup>2</sup>. Since there's usually a test set with many observations, n observations, the *mean squared error* is used. If the outcomes are binary, both RMSE (the square root of MSE) and MSE are equivalent to 1 minus accuracy, since (y - y)<sup>2</sup> equals either 0 (correct prediction) or 1 (incorrect prediction).
@@ -831,4 +831,188 @@ fit_lda <- train(x, y, method = "lda", preProcess = c("center"))
 fit_lda$results["Accuracy"]
 ```
 <strong>Classification With More Than 2 Classes And The Caret Package:</strong>
+* LDA and QDA aren't meant to  be used with datasets that have too many predictors, since the number of parameters to estimate becomes too large. For example, for the digits example, which has 784 predictors, lda would have to estimate over 600,000 parameters and for qda you would have to mulitply that by the number of classes (10), which results in 6,000,000 parameters! Kernel methods, like k nearest neighbor, or local regression don't have model parameters to estimate and they face the *curse of dimensionality* when multiple predictors are used. The dimension refers to the fact that when we have p predictors the distance between 2 observations calculated in p dimensional space.
+* One way to understand the *curse of dimensionality* is by considering how large we have the make the neighborhood of estimates to include a certain percentage of the data, with large neighborhoods the methods loose flexibility. Assume we have 1 continous predictor with equally space points in the [0, 1] interval and want to create a window that includes 10% of the data, then our window has to be of size, 0.1:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/curse-of-dim-1.png" width = 400 height = 100>
 
+* For 2 predictors if we want to include 0.1 of each dimension then it would be a single point. 10% of the whole dataset would require each side of the square to be sqrt(10) and would include 0.316 of the whole data:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/curse-of-dim-2-1.png" width = 400 height = 200>
+
+* To include 10% of the data with p dimensions we need an interval with each side having a size of p√.1 or .1<sup>1/p</sup>. This grows very quickly and gets close to 1, which means all the data, without smoothing:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/curse-of-dim-4-1.png" width = 400 height = 300>
+
+* We'll use a dataset that includes the breakdown of olives into 8 fatty acids, ```data("olive")```. We'll try to predict the region/location (Northern Italy, Sardina, or Southern Italy) of olive using the fatty acid composition values as predictors. The area column is removed because it's not used as a predictor, ```olive = select(olive, -area)```. Let's see how good we do using knn:
+```r
+# Predict region using KNN
+library(caret)
+fit <- train(region ~ .,  method = "knn", 
+             tuneGrid = data.frame(k = seq(1, 15, 2)), 
+             data = olive)
+# We get an accuracy of 97%.
+ggplot(fit)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/olive-knn-1.png" width = 300 height = 200>
+
+* However, using data exploration, we see we can do even better. Looking at the distribution of each predictor stratified by region we see that eicosenoic is only present in Southern Italy and that linoleic separates Northern Italy from Sardinia. Also, as explained, before a goot k for knn would be 5 or 10 and the accuracy for that drops to 95%.
+
+Code: 
+```r
+olive %>% gather(fatty_acid, percentage, -region) %>%
+  ggplot(aes(region, percentage, fill = region)) +
+  geom_boxplot() +
+  facet_wrap(~fatty_acid, scales = "free", ncol = 4) +
+  theme(axis.text.x = element_blank(), legend.position="bottom")
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/olive-eda-1.png" width = 300 height = 200>
+
+* By looking at this we can construct a prediction rule for eicosenoic and linoleic.
+
+Code:
+```r
+olive %>% 
+  ggplot(aes(eicosenoic, linoleic, color = region)) + 
+  geom_point() +
+  geom_vline(xintercept = 0.065, lty = 2) + 
+  geom_segment(x = -0.2, y = 10.54, xend = 0.065, yend = 10.54, 
+               color = "black", lty = 2)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/olive-two-predictors-1.png" width = 300 height = 200>
+
+* The decision rule can be if the first predictor (eicosenoic) is larger than 0.065 predict Southern Italy. If not, then if the second predictor (linoleic) is larger than 10.535 then predict Sardina. Otherwise, predict Northern Italy. This can be drawn up as a *decision tree*, like so:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/olive-tree-1.png" width = 300 height = 200>
+
+* *Decision trees* are used widely in practice, like a decision tree that a docotor uses for deciding if a person is at risk for a heart attack:
+<img src = "https://rafalab.github.io/dsbook/ml/img/Decision-Tree-for-Heart-Attack-Victim-adapted-from-Gigerenzer-et-al-1999-4.png" width = 300 height = 200>
+
+* The general idea is to define algorithms that use data to create trees, like the ones shown. Regression and decision trees operate by predicting an outcome variable, y, by partitioning preditor space. When the outcome is continous the algorithms are called *regression trees*.
+* We'll use the poll data from 2008, trying to estimate the conditional expectation of y (poll margin) given x (day), f(x) = E(Y | <strong>X</strong> = <strong>x</strong>).
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-again-1.png" width = 300 height = 200>
+
+* So we have to build a decision tree and each node will have a different prediction (Ŷ). To do this, we partition the predictor space (J) into non-overlapping regions (R<sub>1</sub>, R<sub>2</sub>, ..., R<sub>J</sub>). For every observation that falls within a region (x<sub>i</sub> ∈ R<sub>i</sub>) predict Ŷ with the average of the training observations Y<sub>i</sub> in the region.
+* Regression trees create the paritions (R<sub>1</sub>, R<sub>2</sub>, ..., R<sub>J</sub>) *recursively*, the resursive steps will be exaplined. Assume we already have a partition, so that every observation (i) is in exactly one of these partitions. For each of these partitions we'll divde further using the following algorithm:
+	1. We need to find a predictor (j) and a value (s) that define 2 new partitions (R<sub>1</sub> and R<sub>2</sub>). These 2 paritions will split our observations into the following sets: R<sub>1</sub>(j, s) = {<strong>X</strong> | X<sub>j</sub> < s} and R<sub>2</sub>(j, s) = {<strong>X</strong> | X<sub>j</sub> < s}.
+	2. Then, in each of these sets we'll define an average, ỸR<sub>1</sub> for R<sub>1</sub> and ỸR<sub>2</sub> for R<sub>2</sub> and use these as our predictions. The averages will be the averages of the observations in each of the 2 partitionss. 
+	3. We could do this for many j's and s' but we pick the combinations that minimize the RSS (residual sum of squares).
+	4. Then, the whole recursion is applied recursively, new regions to split in 2 kept on getting found.
+* Once, the paritioning of predictor space into regions is completed, then, in each region, a prediction is made using that region, just calculate an average.
+* We can see what this algorithm does on the 2008 poll data, the rpart function in the rpart package will be used: ```fit <- rpart(margin ~ ., data = polls_2008)```. Since there's only 1 predictor we don't need to decide which predictor (j) to split by. We just need to decide which values (s) we need to split, we can visually see were the splits were made:
+
+Code: 
+```r
+plot(fit, margin = 0.1)
+text(fit, cex = 0.75)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-tree-1.png" width = 300 height = 200>
+
+* The 1st split is made on day 39.5, then 1 of those 2 regions is split at day 86.5. The resulting 2 partitions are split on days 49.5 and 117.5, respectively. In the end, there are 8 partitions. The final estimate looks like this:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-tree-fit-1.png" width = 300 height = 200>
+
+Code:
+```r
+polls_2008 %>% 
+  mutate(y_hat = predict(fit)) %>% 
+  ggplot() +
+  geom_point(aes(day, margin)) +
+  geom_step(aes(day, y_hat), col="red")
+```
+* Every time we split and define 2 new paritions the training set residual sum of squares decreases, because with more partitions the model has more flexibility to adapt to the training data. In fact, splitting until every point is its own partition the RSS goes down to 0, since the average of 1 value is the same value.
+* To avoid this overtraining the algorithm sets a minimum on how much the RSS must improve for another partition to be added, this parameter is referred to as the *complexity parameter (cp)*. The RSS must improve by a factor of cp for the new partition to be added.
+* Also, the algorithm sets a minimum number of observations to be partitioned, the rpart function has an argument called minsplit that let's you define this, with the default being 20. The algorithm sets a minimum on the number of observations in each partition, in the rpart function the argument is called minbucket (if the optimal split results in a number of observations less than minbucket it's not considered), defaulting to the rounded value of minsplit divided by 3 (minbucket = round(minsplit/3)).
+* Let's see what happens when cp is set to 0 and minsplit to 2. The prediction will be the training data since the tree will keep on splitting and splitting until the RSS is 0, resulting in heavy overtraining:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-tree-over-fit-1.png" width = 300 height = 200>
+
+* We can, also, *prune* trees by snipping off partitions that don't meet a cp criterion: ```pruned_fit <- prune(fit, cp = 0.01)```. We can grow a tree very large and then prune off branches to make it smaller. The resulting estimate:
+<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/pruned_tree.PNG" width = 300 height = 200>
+
+* Cross-validation can be used to pick the best cp value. The train() function can be used for this:
+```r
+# use cross validation to choose cp
+library(caret)
+train_rpart <- train(margin ~ ., 
+			method = "rpart", 
+			tuneGrid = data.frame(cp = seq(0, 0.05, len = 25)), 
+			data = polls_2008)
+ggplot(train_rpart)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-tree-train-1.png" width = 350 height = 250>
+
+* The tree that minimizes the MSE (mean squared error) can be accessed via the finalModel component:
+```r
+# access the final model and plot it
+plot(train_rpart$finalModel, margin = 0.1)
+text(train_rpart$finalModel, cex = 0.75)
+polls_2008 %>% 
+  mutate(y_hat = predict(train_rpart)) %>% 
+  ggplot() +
+  geom_point(aes(day, margin)) +
+  geom_step(aes(day, y_hat), col="red")
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-final-model-1.png" width = 350 height = 250>
+
+Since there's only 1 predictor f(x) can be plotted:
+
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-final-fit-1.png" width = 350 height = 250>
+
+* When the outcome is categorical these methods are referred to as classification or decision trees. The same basic principles are used as with the continuous case but, some slight changes are made to account for the fact the data is categorical.
+* Differences:
+	* One difference is, rather than taking the average at the end of each node for choosing which class to predict. The class that appears the most in a node is predicted.
+	* We can't use RSS to decide on a partition since the outcomes are categorical. We could a naive approach, like looking for partitions that minimize training error. But, better performing approaches use more sophisticated methods. 2 of these are the *Gini Index* and *Entropy*. We can define p̂<sub>m, k</sub> as the proportion of observations in partition m that are of class k.
+		1. Then, the Gini Index is defined as: Gini = <sup>K</sup>∑<sub>k = 1</sub> p̂<sub>m, k</sub>(1 - p̂<sub>m, k</sub>)
+		2. Entropy is defined as: Entropy = -<sup>K</sup>∑<sub>k = 1</sub> p̂<sub>m, k</sub> log(p̂<sub>m, k</sub>), with 0 * log(0) defined as 0.
+	* Both of the above metrics seek to partition observations into subsets that have the same class, they want *purity*. Note: If a partion (m) has only 1 class (1st one) then p̂<sub>m, 1</sub> = 1, p̂<sub>m, 2</sub> = 0, ..., p̂<sub>m, K</sub> = 0. When this happens, both Gini index and Entropy are 0.
+* Let's see how classification trees perform on the digits dataset, consiting of 2s and 7s:
+```r
+train_rpart <- train(y ~ .,
+              method = "rpart",
+              tuneGrid = data.frame(cp = seq(0.0, 0.1, len = 25)),
+              data = mnist_27$train)
+plot(train_rpart)
+```
+We can pick the best cp from this plot:
+
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/mnist-27-tree-1.png" width = 300 height = 200>
+
+* We can use that cp with the tree and see how well we do: ```confusionMatrix(predict(train_rpart, mnist_27$test), mnist_27$test$y)$overall["Accuracy"]```. An accuracy of 82% is achieved, this is better than logistic regression but not as good as the kernel methods. The limitations of a classification tree are shown here (with decision trees the boundary cannot be smoothed):
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/rf-cond-prob-1.png" width = 350 height = 350>
+
+* Despite these limitations classification trees have some advantages that make them very useful. They're highly interpretable, more so than linear models (linear regression or logistic regression models). Also, they're easy to visualize, if small enough. And, they, sometimes, model human decision processes. On the other hand, the recursive partioning approach is a bit harder to train than like, linear regression or k-nearest neighbors. Also, it's not very flexible so it might not be the best performing method and is quite susceptible to changes in the training data. Random forests can improve on these shortcomings.
+* *Random forests* try to increase prediction performance and reduce instability by averaging multiple decision trees, creating a forest of decision trees made with randomness. It has 2 features for this.
+	1. One feature is *bootstrap aggregation* or *bagging*. For this we build many decision or regression trees, T<sub>1</sub>, T<sub>2<sub>, ..., T<sub>B</sub> using the training set. The bootstrap is used for this, to create B bootstrap trees we create tree (T<sub>j</sub, j = 1, ..., B) from a training set of size N. But, to create T<sub>j</sub> we create a bootstrap training set by sampling N observations from the training set with replacement. Then, a decision tree is built for each bootstrap training set, this keeps the indivual decision trees random.
+	2. Next, for every observation (j) in the test set we form a prediction (ŷ<sub>j</sub>) using the corresponding tree (T<sub>j</sub>). To obtain a final prediction we combine the the prediction for each tree in 2 different ways, for continuous outcomes and categorical outcomes. For continuous outcomes we take the average of predictions (ŷ<sub>j</sub>). On the other hand, for categorical outcomes the ŷ that appears the most is predicted, the class that appears the most.
+* Applying random forest to the 2008 poll data and plotting error versus number of trees:
+```r
+library(randomForest)
+fit <- randomForest(margin~., data = polls_2008) 
+plot(fit)	
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/more-trees-better-fit-1.png" width = 300 height = 200>
+	
+* As the number of trees increases, the error goes down, goes up a bit, and then levels out. But, more complex problems will require more trees for the algorithm to converge. The final result for the poll 2008 data:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/polls-2008-rf-fit-1.png" width = 300 height = 200>
+
+* The final result is somewhat smooth and not a step function like the indivual trees, the averaging allows us to permit estimates that aren't step functions. As the number of trees grow, the step function becomes less abundant because of the averaging:
+<img src = "https://rafalab.github.io/dsbook/ml/img/rf.gif" width = 300 height = 200>
+
+* We can fit a random forest to our 2s and 7s digit example:
+```r
+library(randomForest)
+train_rf <- randomForest(y ~ ., data=mnist_27$train)
+confusionMatrix(predict(train_rf, mnist_27$test), mnist_27$test$y)$overall["Accuracy"]
+# Returning an accuracy of 80%
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/cond-prob-rf-1.png" width = 400 height = 300>
+
+* We have much more flexibility than a single tree but, this particular random forest is a big too wiggly. We can use the caret package to optimize some parameters and make it smoother. We can use a different random forest algorithm, Rborist, which is a bit faster:
+```r
+# use cross validation to choose parameter
+train_rf_2 <- train(y ~ .,
+      method = "Rborist",
+      tuneGrid = data.frame(predFixed = 2, minNode = c(3, 50)),
+      data = mnist_27$train)
+confusionMatrix(predict(train_rf_2, mnist_27$test), mnist_27$test$y)$overall["Accuracy"]
+# Accuracy is 80.5%
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/cond-prob-final-rf-1.png" width = 400 height = 200>
+
+* There are several ways to control the smoothness of the random forest estimate. One way is to limit the size of each node, requiring the number of points per node to be larger (minsplit). Also, we can use a random selection of features to split partitions. Specifically, when building each tree at each recursive partition, we only consider a randomly selected subset of predictors to check for the best split and every tree has a different random selection of features. This reduces correlation between trees in the forest, which, in turn, improves prediction accuracy. The argument for this tuning parameter in the random forest function is mtry but each ranomd forest implementation has a different name, looking at the help file to figure out which one. 
+* A disadvantage of random forest is we lose interpretability, we're averaging hundres or thousands of trees into a forest. However, there's a measure called *variable importance* that helps us interpret the results, it tells us how much each predictor influences the final predictions.
