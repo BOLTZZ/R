@@ -124,7 +124,7 @@ Reveals that there's a very high accuracy for males (~93%) and a very low accura
 * A general improvment over using overall acurracy is to study sensitivity and specificity seperatley. To define sensitivity and specificity we need a binary outcome. Wehn the outcomes are categorical qe can define these terms for a specific category. Like, in the digits example (reading digits 0 - 9) we can ask for the specificty in the case of correctly predicting 2 as opposed to some other digit.
 * Once we specify a category of intereset then we can think about positive outcomes (Y = 1) and negative outcomes (Y = 0). 
 * *Sensitivity* is defined as the ability of an algorithm to predict a positive outcome when the actual outcome is positive (Ŷ = 1 when Y = 1). Since an algorithm that predicts a positive outcome (Y = 1) no matter what has perfect sensitivity, the metric on its own is not good enough to judge an algorithm. High sensitivity: Y = 1 -> Ŷ = 1. Also, sensitivity() can be used to find the sensitivity of a prediction: ```sensitivity(predicted_outcome_data, actual_data)```.
-* *Specificity* is the ability of an algorithm to predict a negative when the observed outcome is negative (Ŷ = 0 when Y = 0). High specificity: Y = 0 -> Ŷ = 0. Another way to define specificity is the portion of positive calls that're actually positive. In this case, High specificity: Ŷ = 1 -> Y = 1. Also, specificity() can be used to find the specificity of a prediction: ```specificity(predicted_outcome_data, actual_data)```.
+* *Specificity* is the ability of an algorithm to predict a negative when the observed outcome is negative (Ŷ = 0 when Y = 0). High specificity: Y = 0 -> Ŷ = 0. Another way to define specificity is the portion of positive calls that are actually positive. In this case, High specificity: Ŷ = 1 -> Y = 1. Also, specificity() can be used to find the specificity of a prediction: ```specificity(predicted_outcome_data, actual_data)```.
 * To provide a precise defintion the 4 entries of the confusion matrix are labeled:
 
 | | Actually Positive | Actually Negative
@@ -1016,3 +1016,102 @@ confusionMatrix(predict(train_rf_2, mnist_27$test), mnist_27$test$y)$overall["Ac
 
 * There are several ways to control the smoothness of the random forest estimate. One way is to limit the size of each node, requiring the number of points per node to be larger (minsplit). Also, we can use a random selection of features to split partitions. Specifically, when building each tree at each recursive partition, we only consider a randomly selected subset of predictors to check for the best split and every tree has a different random selection of features. This reduces correlation between trees in the forest, which, in turn, improves prediction accuracy. The argument for this tuning parameter in the random forest function is mtry but each ranomd forest implementation has a different name, looking at the help file to figure out which one. 
 * A disadvantage of random forest is we lose interpretability, we're averaging hundres or thousands of trees into a forest. However, there's a measure called *variable importance* that helps us interpret the results, it tells us how much each predictor influences the final predictions.
+
+<strong>Caret Package:</strong>
+* The algorithms we've learned so far (logistic regression, knn, random forests, and etc) are a small subset of all the algorithms out there. Many of these algorithms are implemented in R but, they're distributed across a wide array of packages, developed by different authors, and use different syntax.
+* The caret package tries to consolidate these algorithms and provide consistency and contains more than 200 different methods that are summarize in this [site](http://topepo.github.io/caret/available-models.html). Caret doesn't automatically install the packages needed to run these methods so to implement a package through caret you still need to install the library. The required packages for each method is included [here](http://topepo.github.io/caret/train-models-by-tag.html).
+* The caret package, also, provides a function that performs cross-validation.
+* We'll use the 2s and 7s digit data set to show some ways in which the caret package can be used. The train() function allows us to train different algorithms using similar syntax, like we can train logistic regression model or knn model just by specifying the model argumnet:
+```r
+library(tidyverse)
+library(dslabs)
+data("mnist_27")
+library(caret)
+# Train logistic regression:
+train_glm <- train(y ~ ., method = "glm", data = mnist_27$train)
+# Train knn:
+train_knn <- train(y ~ ., method = "knn", data = mnist_27$train)
+```
+* To make the predictions we can use the output of train() directly without looking at the specific of predict.glm() or predict.knn(), we can look at predict.train() and read the help page:
+```r
+# Prediction for logistic regression:
+y_hat_glm <- predict(train_glm, mnist_27$test, type = "raw")
+# Prediction for knn:
+y_hat_knn <- predict(train_knn, mnist_27$test, type = "raw")
+```
+* We can study the accuracies very quickly:
+```r
+confusionMatrix(y_hat_glm, mnist_27$test$y)$overall[["Accuracy"]]
+# Returns accuracy of 75% for logistic regression.
+confusionMatrix(y_hat_knn, mnist_27$test$y)$overall[["Accuracy"]]
+# Returns accuracy of 84% for logisitc regression.
+```
+* When an algorithm contains a tuning parameter, train() automatically conducts a cross-validation to decide among a few default values. To find out what parameter(s) are optimized, read [this](https://topepo.github.io/caret/available-models.html). Or, the getModelInfo() and modelLookup() functions can be used to learn more about a model and the parameters that can be optimized: ```modelLookup("knn")```. We run the train() function with default values and see what parameter(s) is/are optimized, using cross-validation:
+```r
+# Running train() with default values:
+train_knn <- train(y ~ ., method = "knn", data = mnist_27$train)
+# Plotting the function, hilighting the parameter the optimizes the algorithm:
+ggplot(train_knn, highlight = TRUE)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/caret-highlight-1.png" width = 300 height = 200>
+
+* By default, the cross-validation is performed by testing on 25 bootstrap samples comprised of 25% of the observations. For the knn method the default is to try out 5, 7, and 9 with 9 maximizing this but there might be an even better k. To change this we need to use the tunegrid parameter in the train() function. The grid of values that are going to be compared must be supplied with a data frame with the column names as specified by the parameters that you get in the model lookup output. 
+* Let's try out 30 values between 9 and 67. We need to use a column in k so the data frame will be: ```data.frame(k = seq(9, 67, 2))```. When running this code we're fitting 30 versions of knn to 25 bootstrap samples, totaling to 750 knn models which will take several seconds:
+```r
+# Train the 750 knn models:
+train_knn <- train(y ~ ., method = "knn", 
+                   data = mnist_27$train,
+                   tuneGrid = data.frame(k = seq(9, 71, 2)))
+# Plot the values of k versus accuracy:
+ggplot(train_knn, highlight = TRUE)
+# Returns the k that maximizes accuracy, k = 29 and accuracy = ~ 85%:
+train_knn$bestTune
+# Best performing model (29-nearest neighbor model) is accesed using the below code:
+train_knn$finalModel
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/train-knn-plot-1.png" width = 300 height = 200>
+
+* The k that maximizes accuracy is 29 and the accuracy = ~ 85%. If you apply a predict() functionto the output of the train() function then it'll use the best performing model to make predictions. Note: The best model was obtained using only the training set (cross-validaton performed on training set) so now we can see the accuracy obtained on the test set: 
+```r
+confusionMatrix(predict(train_knn, mnist_27$test, type = "raw"),
++               mnist_27$test$y)$overall["Accuracy"]
+# Accuracy is 0.835, ~ 84%.
+```
+* Sometimes we might change the way we perform cross-validation, the method, the way how partitions are made, etc. For this we need to use the trainControl() function, we can make the code, just shown, go a bit faster by using 10-fold cross-validation:
+```r
+# 10 validation samples that use 10% of the observations, each:
+control <- trainControl(method = "cv", number = 10, p = .9)
+train_knn_cv <- train(y ~ ., method = "knn", 
++                     data = mnist_27$train,
++                     tuneGrid = data.frame(k = seq(9, 71, 2)),
++                     trControl = control)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/cv-10-fold-accuracy-estimate-1.png" width = 300 height = 200>
+
+* The accuracy estimates are more variable than without the 10-fold cross-validation. This happens since we changed the number of samples used to estimate accuracy, in the first example we used 25 bootstrap samples, and now we used 10-fold cross-validation.
+* The train() function provides standard deviation values for each parameter that was tested, obtained from the different validation sets. We can make a plot that shows the point estimates of accuracy with standard deviations:
+<img src https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/accuracies_with_sd.PNG"" width = 300 height = 200>
+
+* The best fitting knn model approximates the true conditional probability pretty well. But the boundary is a bit wiggly since knn, like the basic bin smoother, does not use a smooth kernel:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/mnist27-optimal-knn-fit-1.png" width = 300 height = 200>
+
+* To improve this we could try loess, scanning through the [avaliable models page](https://topepo.github.io/caret/available-models.html) we find tht we can use the gamLoess() method. We see that we need to install the gam package. By using: ```modelLookup("gam")``` we can see that we have 2 parameters to optimize. For this we'll keep the degree fixed at 1. But, to try out different values for the span we would still have to include a column in the table with the name degree, being a requirment of the caret package, so we can define a grid using expand.grid(): ```grid <- expand.grid(span = seq(0.15, 0.65, len = 10), degree = 1)```. Now, we use the default cross-validation control parameters:
+```r
+# Training model:
+train_loess <- train(y ~ ., 
++              method = "gamLoess",
++              tuneGrid=grid,
++              data = mnist_27$train)
+# Plot all models on accuracy vs span:
+ggplot(train_loess, highlight = TRUE)
+# Select the best performing model based on accuracy which is ~0.32 with an accuracy of 85%:
+confusionMatrix(data = predict(train_loess, mnist_27$test), 
+                reference = mnist_27$test$y)$overall["Accuracy"]
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/loess-accuracy-1.png" width = 300 height = 200>
+
+* The best performing model had a span of ~0.32 and an accuracy of 85%, performing similar to the best performing model of knn. But, the conditional probability estimate is much smoother than knn's:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/gam-smooth-1.png" width = 300 height = 200>
+
+* Not all parameters in machine learning algorithms are tuned. For example, in reggression models or lda (linear discriminant analysis) we fit the best model using least squares estimate or maximum likelihood estimates, which aren't tuning parameters, they're obtained using least squares or MLE (maximum likelihood estimate), or some other optimization technique. Parameters that are turned are parameters that we can change and then get an estimate of the model for each one. So in knn the number of neighbors is a tuning parameter, in regression the number of predictors that we include could be considered a parameter that's been optimized. Thus, in the train() function of the caret package we only optimize parameters that are tunable. And, the train() function in the caret package won't optimize the regression coefficents that are estimated, instead it'll just estimate using least squares.
+* It's very important to make a clear distinction to make when using the caret package, knowing which parameters are optimized and which aren't.
