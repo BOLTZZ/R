@@ -1115,3 +1115,55 @@ confusionMatrix(data = predict(train_loess, mnist_27$test),
 
 * Not all parameters in machine learning algorithms are tuned. For example, in reggression models or lda (linear discriminant analysis) we fit the best model using least squares estimate or maximum likelihood estimates, which aren't tuning parameters, they're obtained using least squares or MLE (maximum likelihood estimate), or some other optimization technique. Parameters that are turned are parameters that we can change and then get an estimate of the model for each one. So in knn the number of neighbors is a tuning parameter, in regression the number of predictors that we include could be considered a parameter that's been optimized. Thus, in the train() function of the caret package we only optimize parameters that are tunable. And, the train() function in the caret package won't optimize the regression coefficents that are estimated, instead it'll just estimate using least squares.
 * It's very important to make a clear distinction to make when using the caret package, knowing which parameters are optimized and which aren't.
+* Example code for finding best value of cp for a classification tree fit, changing nodesize to 0, plotting best tree fit, creating a random forest:
+```r
+# Load the proper libraries:
+library(caret)
+library(rpart)          
+library(dslabs)
+data("tissue_gene_expression")
+set.seed(1991, sample.kind = "Rounding")
+# Change the type of tissue_gene_expression:
+dat = as.data.frame(tissue_gene_expression)
+y = dat$y
+# Create a classification tree fit with "rpart" for different values of cp:
+fit_classification_tree = train(y ~., method = "rpart", tuneGrid = data.frame(cp = seq(0, 0.1, 0.01)), data = dat)
+# Plot the fit to see which value cp is th best, cp = 0 gives the highest accuracy ~ 89%:
+ggplot(fit_classification_tree)
+set.seed(1991, sample.kind = "Rounding")
+# Change minsplit = 0 so any node can be split (makes it less flexible but increases accuracy) since ther are
+# only 6 placentas in the dataset:
+fit_rpart = train(y ~., method = "rpart", tuneGrid = data.frame(cp = seq(0, 0.1, 0.01)), data = dat, control = rpart.control(minsplit = 0))
+# Access the accuracy when cp = 0 via confusionMatrix, accuracy = ~ 91%:
+confusionMatrix(fit_rpart)
+# Plot the tree with this highest accuracy:
+plot(fit_rpart$finalModel)
+text(fit_rpart$finalModel)
+set.seed(1991, sample.kind = "Rounding")
+# Create a random forest (method = "rf"), find the best mtry value, and set nodesize to 0:
+fit = train(y ~., method = "rf", tuneGrid = data.frame(mtry = seq(50, 200, 25)), data = dat, minsplit = 1)
+# Access the best mtry value (100):
+fit$bestTune$mtry
+# Set the output of train() with random forest ("rf") to a function varImp() stored in the variable, imp:
+imp = varImp(fit)
+# Print out importantce of each variable in the random forest method, stored in imp:
+imp
+#rf variable importance
+# only 10 most important variables shown (out of 500)
+#         Overall
+#GPA33     100.00
+#BIN1       64.65
+#GPM6B      62.35
+#KIF2C      62.15
+#CLIP3      52.09
+#COLGALT2   46.48
+#CFHR4      35.03
+#SHANK2     34.90
+#TFR2       33.61
+#GALNT11    30.70
+```
+
+<strong>Model Fitting and Recommendation Systems:</strong>
+
+Case Study (MNIST):
+* We're going to use the MNIST (Modified National Institute of Standards and Technology database) digits data set. Which be loaded like this: ```mnist = read_mnist()```.
