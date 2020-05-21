@@ -1330,3 +1330,73 @@ y_pred <- factor(apply(p, 1, which.max)-1)
 confusionMatrix(y_pred, y_test)
 ```
 * The ensemble has a probability of 96.1% which is greater than knn (94.9%) and random forest (95.4%). We only ensemble 2 methods but in practice we might ensemble dozens or hundreds of methods, which really provides some substansial improvements.
+
+Code Example (Testing out 10 of most common machine learning algorithms):
+```r
+# Names of 10 most common machine learning algorithms:
+models <- c("glm", "lda", "naive_bayes", "svmLinear", "knn", "gamLoess", "multinom", "qda", "rf", "adaboost")
+# Set everything up:
+library(caret)
+library(dslabs)
+set.seed(1, sample.kind = "Rounding")
+data("mnist_27")
+# Fit each model on the training data:
+fits <- lapply(models, function(model){ 
+	print(model)
+	train(y ~ ., method = model, data = mnist_27$train)
+}) 
+# Set the names of fit to the corresponding model name:    
+names(fits) <- models
+# Generate a matrix of the predictions for each model:
+pred <- sapply(fits, function(object) 
+	predict(object, newdata = mnist_27$test))
+# Compute accuracy for each model:
+acc <- colMeans(pred == mnist_27$test$y)
+# Compute accuracy for all the models combined (78.7%):
+mean(acc)
+# Find the average for each row in the pred matrix, that's equal to 7:
+votes <- rowMeans(pred == "7")
+# Creating ensemble here, for each value in votes is greater than 0.5 set it to 7, if not, set it 2, store this in y_hat:
+y_hat <- ifelse(votes > 0.5, "7", "2")
+# Find accuracy of predictions (81%):
+mean(y_hat == mnist_27$test$y)
+# Obtain the accuracies minimum accuracy estimates from cross-validation with training data:
+acc_hat <- sapply(fits, function(fit) min(fit$results$Accuracy))
+# Average this which results in a training set accuracy estimate of 83.4%:
+mean(acc_hat)
+# Create an index where only the models with a training set accuracy estimate higher than 0.8 are selected:
+ind <- acc_hat >= 0.8
+# Find the row means of pred, using the new index (basically selecting the new methods), seeing if its equal to 7:
+votes <- rowMeans(pred[,ind] == "7")
+# Create predictions based on the decision rule that votes value must be larger than 0.5 for it to be 7 and less than 0.5 for it to be 2:
+y_hat <- ifelse(votes>=0.5, 7, 2)
+# Average this ensemble to get an accuracy of 83%
+mean(y_hat == mnist_27$test$y)
+```
+<strong>Dimension Reduction:</strong>
+* A typical machine learning challenge will include a large number of predictors, which makes visualization somewhat challenging. For example, to compare each of the 784 features in our predicting digits example, we would have to create, for example, 306,936 scatterplots. Creating one single scatter-plot of the data is impossible due to the high dimensionality.
+* The general idea behind *dimension reduction* is to reduce the dimension of a dataset while preserving important features, like preserving the distrance between observations, visualization becomes feasible with fewer dimensions. Allowing this to happen is the *singular value decomposition*.
+* We'll use twin heights data (by simulating it) with pairs of adults and children. We can simulate 100 two-dimensional points representing the number of standard deviations each indivual is from the mean height (each point is a pair of twins). This can be done with the mvrnorm function from the MASS package to simulate bivariate normal data:
+```r
+set.seed(1988, sample.kind = "Rounding")
+library(MASS)
+# Set number of points to 100
+n <- 100
+Sigma <- matrix(c(9, 9 * 0.9, 9 * 0.92, 9 * 1), 2, 2)
+x <- rbind(mvrnorm(n / 2, c(69, 69), Sigma),
+           mvrnorm(n / 2, c(55, 55), Sigma))
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-illustration-1.png" width = 300 height = 200>
+
+* The correlation is pretty high and there are 2 groups of twins, the adults on top right points and the children on the bottom left points. We can reduce the dimensions down from 2 to 1 while keeping important characteristics, like the observations cluster into 2 groups. Specifically, we want an 1-dimensional summary of our predictors from which we can approximate the distance between any 2 observations. 
+* We can start with a naive approach of just approximating on 1 dimension and completley forgetting about the other:
+```r
+d <- dist(x) # Set d as the distance between all the points in x (the dataset).
+z <- x[,1] # Just using 1 dimension now.
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/one-dim-approx-to-dist-1.png" width = 300 height = 300>
+
+* The above is the approximate distances vs the original distances. The plot looks the same if we use the 2nd dimension and we obtain a general underestimation. This is to be expected since we're adding more positive quantaties in the distance calculation as we increase the number of dimensions. We can use the below equation to make the distance go way down:
+![\sqrt{ \frac{1}{2} \sum_{j=1}^2 (X_{i,j}-X_{i,j})^2 },](https://render.githubusercontent.com/render/math?math=%5Csqrt%7B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bj%3D1%7D%5E2%20(X_%7Bi%2Cj%7D-X_%7Bi%2Cj%7D)%5E2%20%7D%2C)
+
+* 
