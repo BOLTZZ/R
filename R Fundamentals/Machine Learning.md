@@ -1166,4 +1166,96 @@ imp
 <strong>Model Fitting and Recommendation Systems:</strong>
 
 Case Study (MNIST):
-* We're going to use the MNIST (Modified National Institute of Standards and Technology database) digits data set. Which be loaded like this: ```mnist = read_mnist()```.
+* We're going to use the MNIST (Modified National Institute of Standards and Technology database) digits data set, its a popular dataset among machine learning competitions. Which be loaded like this: ```mnist = read_mnist()```. The data has training and test sets: ```names(mnist)```. We'll sample 10,000 random rows from the training set and 1,000 random rows from test set:
+```r
+# sample 10k rows from training set, 1k rows from test set
+set.seed(123)
+index <- sample(nrow(mnist$train$images), 10000)
+x <- mnist$train$images[index,]
+y <- factor(mnist$train$labels[index])
+index <- sample(nrow(mnist$test$images), 1000)
+x_test <- mnist$test$images[index,]
+y_test <- factor(mnist$test$labels[index])
+```
+* In machine learning, predictors are often transformed before running the machine learning algorithm and predictors that are unnessecary are removed, this is referred to as *preprocessing*. 
+* Examples of preprocessing include standarizing the predictors, taking the transform (like log) of some predictors, removing predictors that are highly correlated with each other, and removing predictors with very few non-unique values or close to 0 variation.
+* We can see there are a lot of features with 0 variability or almost 0 variability, using this:
+```r
+library(matrixStats)
+# Compute the sd of each column:
+sds <- colSds(x)
+# Plot it:
+qplot(sds, bins = 256, color = I(“black”))
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/pixel-sds-1.png" width = 300 height = 200>
+
+* This is expected since there are parts of the image that contain very few dark pixels, very litte writing and very little variation. Almost all the values are 0. The caret package includes a function that recommends these features to be removed because of *near zero variance*:
+```r
+library(caret)
+nzv <- nearZeroVar(x)
+image(matrix(1:784 %in% nzv, 28, 28))
+# The columns that are removed are the purple ones in the plot
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/near-zero-image-1.png" width = 300 height = 200>
+
+* Once the columns are removed we're left with 252 columns: ```col_index <- setdiff(1:ncol(x), nzv)```.
+* Now, we're going to actually implement knn and random forest on the MNIST data but, before we do this we need to add column names to the feature matricies, being a requirment of the caret package:
+```r
+colnames(x) <- 1:ncol(mnist$train$images)
+# The name of the column will be its colum number:
+colnames(x_test) <- colnames(x)
+```
+* We can start with trying to create a knn model:
+
+	1. The first step would be to optimize for the number of neighbors. When we run the algorithm we'll have to compute the distance between each observation in the test set and each observation in the training set, resulting in a lot of calculations. The k-fold cross-validation can be used to improve speed:
+```r
+# The control contains the 10-fold cross validation with 10% chance.
+control <- trainControl(method = "cv", number = 10, p = .9)
+# We can find the model that maximixes accuracy
+train_knn <- train(x[,col_index], y,
+                                method = "knn", 
+                                tuneGrid = data.frame(k = c(1,3,5,7)),
+                                trControl = control)
+```
+* The above code might take several minutes to run on a standard laptop. In general, it's a good idea to take a small subset of the data to test out the piece of code and get a sense of its timing before we start running code that might take hours to run, or even days. We can test the above code on a smaller dataset with n as the number of rows and b as the number of cross-validations folds:
+```r
+# Number of rows/observations:
+n <- 1000
+# Number of cross-validation folds with 10% chance:
+b <- 2
+index <- sample(nrow(x), n)
+control <- trainControl(method = "cv", number = b, p = .9)
+train_knn <- train(x[index ,col_index], y[index],
+                   method = "knn",
+                   tuneGrid = data.frame(k = c(3,5,7)),
+                   trControl = control)
+```
+* We can keep on increasing n and b to get an idea of how long the whole process will take. Once we're done optimizing the algorithm we can fit the entire data: ```fit_knn <- knn3(x[ ,col_index], y,  k = 3)```. The accuracy is almost 95%:
+```r
+# Predict using fitted model (knn) on test set:
+y_hat_knn <- predict(fit_knn,
+                     x_test[, col_index],
+                     type="class")
+# Create confusion matrix:
+cm <- confusionMatrix(y_hat_knn, factor(y_test))
+# Find accuracy:
+cm$overall["Accuracy"]
+```
+* We can obtain the sensitivty and specificity outputs:
+```r
+cm$byClass[,1:2]
+#>          Sensitivity Specificity
+#> Class: 0       0.990       0.996
+#> Class: 1       1.000       0.993
+#> Class: 2       0.965       0.997
+#> Class: 3       0.950       0.999
+#> Class: 4       0.930       0.997
+#> Class: 5       0.921       0.993
+#> Class: 6       0.977       0.996
+#> Class: 7       0.956       0.989
+#> Class: 8       0.887       0.999
+#> Class: 9       0.951       0.990
+```
+* From the sensitivty and specificity outputs we see the 8s are the hardest to detect and the most commonly incorrect predicted digit is 7.
+
+	2. Let's try out random forest and see if we can do even better. Though with random forests computation time is an even bigger challenge.
