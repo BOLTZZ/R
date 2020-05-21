@@ -1397,6 +1397,6 @@ z <- x[,1] # Just using 1 dimension now.
 <img src = "https://rafalab.github.io/dsbook/book_files/figure-html/one-dim-approx-to-dist-1.png" width = 300 height = 300>
 
 * The above is the approximate distances vs the original distances. The plot looks the same if we use the 2nd dimension and we obtain a general underestimation. This is to be expected since we're adding more positive quantaties in the distance calculation as we increase the number of dimensions. We can use the below equation to make the distance go way down:
-![\sqrt{ \frac{1}{2} \sum_{j=1}^2 (X_{i,j}-X_{i,j})^2 },](https://render.githubusercontent.com/render/math?math=%5Csqrt%7B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bj%3D1%7D%5E2%20(X_%7Bi%2Cj%7D-X_%7Bi%2Cj%7D)%5E2%20%7D%2C)
+![\sqrt{ \frac{1}{2} \sum_{j=1}^2 (X_{i,j}-X_{i,j})^2 }](https://render.githubusercontent.com/render/math?math=%5Csqrt%7B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bj%3D1%7D%5E2%20(X_%7Bi%2Cj%7D-X_%7Bi%2Cj%7D)%5E2%20%7D%2C)
 
 * 
