@@ -1426,6 +1426,27 @@ sd(dist(x) - dist(z[,1])*sqrt(2)) # z[,1] is the 1st principal component of the 
 
 * Dimension reduction can often be described as applying a transformation A to a matrix X with many columns that moves the information contained in X to the first few columns of Z = AX, then keeping just these few informative columns, thus reducing the dimension of the vectors contained in the rows.
 * In the first example, we divided by √2 to account for the change from a 2 dimension distance to a 1 dimension distance. But, we can guaruntee the distance scales remain the same if the colums of A are re-scaled to assure the sum of squares is 1:
-![a_{1,2}^2 + a_{2,2}^2=1 ](https://render.githubusercontent.com/render/math?math=a_%7B1%2C2%7D%5E2%20%2B%20a_%7B2%2C2%7D%5E2%3D1%20)
+![a_{1,1}^2 + a_{2,1}^2 = 1\mbox{ and }](https://render.githubusercontent.com/render/math?math=a_%7B1%2C1%7D%5E2%20%2B%20a_%7B2%2C1%7D%5E2%20%3D%201%5Cmbox%7B%20and%20%7D)
 and 
-![a_{1,2}^2 + a_{2,2}^2=1 ](https://render.githubusercontent.com/render/math?math=a_%7B1%2C2%7D%5E2%20%2B%20a_%7B2%2C2%7D%5E2%3D1%20)
+![a_{1,2}^2 + a_{2,2}^2=1 ](https://render.githubusercontent.com/render/math?math=a_%7B1%2C2%7D%5E2%20%2B%20a_%7B2%2C2%7D%5E2%3D1%20). And, the correlation of the columns is 0:
+![a_{1,1} a_{1,2} + a_{2,1} a_{2,2} = 0.](https://render.githubusercontent.com/render/math?math=a_%7B1%2C1%7D%20a_%7B1%2C2%7D%20%2B%20a_%7B2%2C1%7D%20a_%7B2%2C2%7D%20%3D%200.)
+
+* Remember that if the columns are centered to have average 0, then the sum of squares is equivalent to the variance or standard deviation squared.
+* To achieve *orthogonality* in the 1st example we have to multiply the 1st set of coefficents (1st column of A) by √2 and the 2nd by 1/√2 so we have the same exact distances for both dimensions:
+```r
+z[,1] <- (x[,1] + x[,2]) / sqrt(2)
+z[,2] <- (x[,2] - x[,1]) / sqrt(2)
+# We get a transformation that preserves the distance between any 2 points:
+max(dist(z) - dist(x))
+#> [1] 3.24e-14
+# We, also, get an improved approximation if we use the 1st dimension:
+sd(dist(x) - dist(z[,1]))
+#> [1] 0.315
+```
+* In this case, Z is an orthogonal rotation of X: it preserves the distances between rows. By using the above transformation we can summarize the distance between any 2 pairs of twins with just 1 dimension. Plotting the 1 dimensional data, clearly shows their are 2 groups (adult and children) thus, the transformation preserves the distance:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/twins-pc-1-hist-1.png" width = 300 height = 200>
+
+* Loss of information was kept at a minimum as the dimensions were changed from 2 to 1. The reason this could happen was because the columns of X were very correlated: ```cor(x[,1], x[,2]) #Correlation was 0.988```. And, the transformation produced uncorrelated columns with "independent" information in each column: ```cor(z[,1], z[,2]) #Correlation is 0.0876```. One way this insight may be useful in a machine learning application is that we can reduce the complexity of a model by using just Z<sub>1</sub> rather than both  X<sub>1</sub> and X<sub>2</sub>.
+* It's common to obtain data with highly correlated predictors and *principal component analysis* (PCA) can be useful for reducing the complexity of the model being fit. From what we computed, up above, the total variability can be defined as the sum of the sum of squares of the columns. We assume the columns are centered, so this sum is equivalent to the sum of the variances of each column:
+![v_1 + v_2, \mbox{ with } v_1 = \frac{1}{N}\sum_{i=1}^N X_{i,1}^2 \mbox{ and } v_2 =  \frac{1}{N}\sum_{i=1}^N X_{i,2}^2](https://render.githubusercontent.com/render/math?math=v_1%20%2B%20v_2%2C%20%5Cmbox%7B%20with%20%7D%20v_1%20%3D%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C1%7D%5E2%20%5Cmbox%7B%20and%20%7D%20v_2%20%3D%20%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C2%7D%5E2)
+. We can compute v<sub>1</sub> and v<sub>2</sub> using: ```colMeans(x^2) #> [1] 3904 3902```. Also, we show that if we apply an orthogonal transformation the total variation remains the same: ```sum(colMeans(x^2)) #> [1] 7806 sum(colMeans(z^2)) #> [1] 7806```. But, in the transformed version (Z) 99% of the variability is in the 1st dimension while in the ogrinal version (X) the variability is distributed evenly across the dimensions.
