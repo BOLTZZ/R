@@ -1258,4 +1258,75 @@ cm$byClass[,1:2]
 ```
 * From the sensitivty and specificity outputs we see the 8s are the hardest to detect and the most commonly incorrect predicted digit is 7.
 
-	2. Let's try out random forest and see if we can do even better. Though with random forests computation time is an even bigger challenge.
+	2. Let's try out random forest and see if we can do even better. Though with random forests computation time is an even bigger challenge than with knn. For each forest we need to build hundreds of trees and there are several parameters we can tune. We use the random forest implementation in the Rborist package (but it has less features) which is faster than the rf package. Since the fitting the is the slowest part of the procedure, instead of the predicting (which is with knn), for random forest, we'll use only use 5-fold cross-validation. Also, we'll reduce the number of trees in the fit since we're not building the final model, kind of like taking a subset. Lastly, we'll take a random subset of observations when constructing each tree, this can be changed with the nSamp argument in the Rborist() function:
+```r
+library(Rborist)
+# Set control as the 5-fold cross-validation with 20% chance for each one:
+control <- trainControl(method="cv", number = 5, p = 0.8)
+# Set grid as the tuning parameters
+grid <- expand.grid(minNode = c(1,5) , predFixed = c(10, 15, 25, 35, 50))
+# Create the random forest model with Rborist:
+train_rf <-  train(x[, col_index], y,
+                   method = "Rborist",
+                   nTree = 50,
+                   trControl = control,
+                   tuneGrid = grid,
+                   nSamp = 5000)
+```
+* The above optimization takes a few minutes to run. We can choose the best parameters using this: ```train_rf$bestTune```. And, now we're ready to set our final tree, so we'll increase the number of trees:
+```r
+fit_rf <- Rborist(x[, col_index], y,
+                  nTree = 1000,
+                  minNode = train_rf$bestTune$minNode,
+                  predFixed = train_rf$bestTune$predFixed)
+```
+* The above code takes a few minutes to run. But, once it's done we can use the below code to find the accuracy:
+```r
+# Set y_hat_rf to class of factor:
+y_hat_rf <- factor(levels(y)[predict(fit_rf, x_test[ ,col_index])$yPred])
+# Create confusion matrix of the above and y_test:
+cm <- confusionMatrix(y_hat_rf, y_test)
+# Print accuracy (95.1%):
+cm$overall["Accuracy"]
+```
+* We've done minimal tuning here and with some more tuning, examining more parameters, growing out more trees, we can get an even higher accuracy.
+* One of the limitations, as explained before, of random forests is they're not very interpretable. However the concept of *variable importance* helps a little bit in this regard. Unfortuantley, the current implementation of the Rborist package doesn't support variable importance calculations. So we can use the random forest function in the random forest package, instead. And, we're not going to use all the columns in the feature matrix:
+```r
+library(randomForest)
+# Sets x and y and creates a random forest model:
+x <- mnist$train$images[index,]
+y <- factor(mnist$train$labels[index])
+rf <- randomForest(x, y,  ntree = 50)
+```
+* We can compute the importance of each feature now: ```imp = importance(rf)```. The first few features have 0s because they're never used in the importance algorithm because they're on the edges. In this particular example it makes sense to explore the importance of these features via an image, we can make an image in which each feature is plotted on where it came from in the image, ```image(matrix(imp, 28, 28))```:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/importance-image-1.png" width = 300 height = 200>
+
+* The important features are in the middle, where most of the writing is. An important part of data science is visualizing results to discern why we're failing, the method of doing this depending on the application. For the digits we'll find digits which we were quite certain of a call but it was incorrect. We can seee some incorrect calls for random forest:
+```r
+# NOTE: THE BELOW CODE IS 4 KNN FALSE POSITIVE CALLS:
+# Predict using knn:
+p_max <- predict(fit_knn, x_test[,col_index])
+p_max <- apply(p_max, 1, max)
+# Find the indicies which don't match up with the test data:
+ind  <- which(y_hat_knn != y_test)
+# Order it in decreasing order:
+ind <- ind[order(p_max[ind], decreasing = TRUE)]
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/rf-images,-1.png" width = 500 height = 200>
+
+* We can see where we messed up with random forest, up above, and learn how to fix our algorithm.
+* A very powerful approach in machine learning is the idea of ensembling different machine learning algorithms into one. The idea of an *ensemble* is similar to the idea of combining data from different pollsters to obtain a better estimate of the true support for different candidates. In machine learning, one can greatly improve the final results of our prediction by combining the results of different algorithms.
+* We can compute new class probabilites by combining the class probabilities of knn and random forest. We can use the below code, to simply average these probabilities:
+```r
+# Random forest:
+p_rf <- predict(fit_rf, x_test[,col_index])$census
+p_rf <- p_rf / rowSums(p_rf)
+# knn:
+p_knn <- predict(fit_knn, x_test[,col_index])
+p <- (p_rf + p_knn)/2
+# Combine both probailities:
+y_pred <- factor(apply(p, 1, which.max)-1)
+# Create a confusion matrix and print it:
+confusionMatrix(y_pred, y_test)
+```
+* The ensemble has a probability of 96.1% which is greater than knn (94.9%) and random forest (95.4%). We only ensemble 2 methods but in practice we might ensemble dozens or hundreds of methods, which really provides some substansial improvements.
