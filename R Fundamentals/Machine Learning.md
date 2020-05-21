@@ -1386,17 +1386,46 @@ Sigma <- matrix(c(9, 9 * 0.9, 9 * 0.92, 9 * 1), 2, 2)
 x <- rbind(mvrnorm(n / 2, c(69, 69), Sigma),
            mvrnorm(n / 2, c(55, 55), Sigma))
 ```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-illustration-1.png" width = 300 height = 200>
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-illustration-1.png" width = 300 height = 300>
 
 * The correlation is pretty high and there are 2 groups of twins, the adults on top right points and the children on the bottom left points. We can reduce the dimensions down from 2 to 1 while keeping important characteristics, like the observations cluster into 2 groups. Specifically, we want an 1-dimensional summary of our predictors from which we can approximate the distance between any 2 observations. 
 * We can start with a naive approach of just approximating on 1 dimension and completley forgetting about the other:
 ```r
 d <- dist(x) # Set d as the distance between all the points in x (the dataset).
-z <- x[,1] # Just using 1 dimension now.
+z <- x[,1] # Just using 1 dimension now (x[,1]).
 ```
 <img src = "https://rafalab.github.io/dsbook/book_files/figure-html/one-dim-approx-to-dist-1.png" width = 300 height = 300>
 
 * The above is the approximate distances vs the original distances. The plot looks the same if we use the 2nd dimension and we obtain a general underestimation. This is to be expected since we're adding more positive quantaties in the distance calculation as we increase the number of dimensions. We can use the below equation to make the distance go way down:
 ![\sqrt{ \frac{1}{2} \sum_{j=1}^2 (X_{i,j}-X_{i,j})^2 }](https://render.githubusercontent.com/render/math?math=%5Csqrt%7B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bj%3D1%7D%5E2%20(X_%7Bi%2Cj%7D-X_%7Bi%2Cj%7D)%5E2%20%7D%2C)
 
-* 
+* And. we can divide the distance by √2 to get the correlation:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-approx-1-1.png" width = 300 height = 300>
+
+* We can find the typical distance: ```sd(dist(x) - dist(z)*sqrt(2))``` which is ~ 1.2. Looking at the previous scatterplot, we can see the distance of any 2 points would be the length of a line between them. We can plot the difference versus the average:
+```r
+z  <- cbind((x[,2] + x[,1])/2,  x[,2] - x[,1])
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/rotation-1.png" width = 300 height = 300>
+
+* The distance between the points is explained by the 1st dimension, the average. Which means we can ignore the 2nd dimension and not lose too much information. If the line is completely flat, we lose no information at all. Using the first dimension of this transformed matrix we obtain an even better approximation:
+```r
+sd(dist(x) - dist(z[,1])*sqrt(2)) # z[,1] is the 1st principal component of the matrix x.
+#> [1] 0.315
+# The typical difference improved by ~35%
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-approx-1-1.png" width = 300 height = 300>
+
+* Notice, that each row of X was transformed using a linear trasnformation. For any row i, the 1st entry was: Z<sub>i, 1</sub> = a<sub>1, 1</sub> * X<sub>i, 1</sub> + a<sub>2, 1</sub> * X<sub>i, 2</sub> with a<sub>1, 1</sub> = 0.5 and a<sub>2, 1</sub> = 0.5. The second entry was, also, a linear transformation: Z<sub>i, 2</sub> = a<sub>1, 2</sub> * X<sub>i, 1</sub> + a<sub>2, 2</sub> * X<sub>i, 2</sub> with a<sub>1, 2</sub> = 1 and a<sub>2, 2</sub> = -1. 
+* The linear transformation can be reversed to obtain X from Z. The 1st entry is: X<sub>i, 1</sub> = b<sub>1, 1</sub> * Z<sub>i, 1</sub> + b<sub>2, 1</sub> * Z<sub>i, 2</sub> with b<sub>1, 1</sub> = 1 <- MIGHT BE WRONG CHECK DISCUSSION BOAARD and b<sub>2, 1</sub> = 0.5. And, X<sub>i, 2</sub> = b<sub>2, 1</sub> * Z<sub>i, 1</sub> + b<sub>2, 2</sub> * Z<sub>i, 2</sub> with b<sub>2, 1</sub> = 1 and b<sub>2, 2</sub> = 0.5.
+* The above operations can be performed with linear algebra. The first operation would be written as:
+<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/matrix_1.PNG" width = 200 height = 40>
+
+* And, it can be transformed back by multiplying by A<sup>-1</sup>:
+<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/matrix_2.PNG" width = 200 height = 40>
+
+* Dimension reduction can often be described as applying a transformation A to a matrix X with many columns that moves the information contained in X to the first few columns of Z = AX, then keeping just these few informative columns, thus reducing the dimension of the vectors contained in the rows.
+* In the first example, we divided by √2 to account for the change from a 2 dimension distance to a 1 dimension distance. But, we can guaruntee the distance scales remain the same if the colums of A are re-scaled to assure the sum of squares is 1:
+![a_{1,2}^2 + a_{2,2}^2=1 ](https://render.githubusercontent.com/render/math?math=a_%7B1%2C2%7D%5E2%20%2B%20a_%7B2%2C2%7D%5E2%3D1%20)
+and 
+![a_{1,2}^2 + a_{2,2}^2=1 ](https://render.githubusercontent.com/render/math?math=a_%7B1%2C2%7D%5E2%20%2B%20a_%7B2%2C2%7D%5E2%3D1%20)
