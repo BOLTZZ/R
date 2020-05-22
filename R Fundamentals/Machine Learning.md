@@ -1667,3 +1667,4 @@ movielens %>% group_by(genres) %>%
 	theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 <strong>Regularization:</strong>
+* *Regularization* can help improve our results even more
