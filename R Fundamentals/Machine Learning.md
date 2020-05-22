@@ -1589,4 +1589,81 @@ RMSE <- function(true_ratings, predicted_ratings){
   }
 ```
 * The Netflix challenge winners implemented 2 general classes of models. One was similar to knn, where you found movies that were similar to each other and users that were similar to each other. The other one was based on an approach called *matrix factorization*, which is what we'll focus on.
-* Let's start by building a model that predicts the same rating for all movies, regardless of user and movie.
+* Let's start by building a model that predicts the same rating for all movies, regardless of user and movie with all the differences explained by random variation. The equation would be (ϵ = independent errors sampled from the same distribution centered at 0, μ = "true" rating for all movies and users): Y<sub>u, i</sub> = μ + ϵ<sub>u, i</sub>. The estimate that minimises RMSE is the least squares estimate of μ (average of all ratings): ```mu_hat = mean(train_set$rating) #mu_hat = 3.54```. Let's see how well this average performs, we can find the RMSE on the test set: ```naive_rmse = RMSE(test_set$rating, mu_hat) #naive_rmse = 1.05```. The RMSE is pretty big and if any other number is plugged in, the RMSE will go up because the average minimizes the RMSE. Since we're going to be using many different approaches we can create a table to store the results of the RMSE for each approach: ```rmse_results <- tibble(method = "Just the average", RMSE = naive_rmse)```.
+* We know, from experience, that some movies are just rated higher than others. We can confirm this by data because of the above scatterplot of movie ratings. Thus, we can agument the previous model by adding a term, b<sub>i</sub>, which represents the average rating for movie, i: Y<sub>u, i</sub> = μ + b<sub>i</sub> + ϵ<sub>u, i</sub>. These b's are usually called *effects* but in the Netflix challenge papers they're reffered to as *bias*. Again, we can use least squares to estimate b: ```fit <- lm(rating ~ as.factor(movieId), data = movielens)```. However, since there are thousands of b's, each movie gets 1 estimate and the lm function will be extremley slow and it's NOT recommended to run. But, in this situation, we know the least squares estimate b̂<sub>i</sub> (b-hat_i) is just the average of Y<sub>u,i</sub> - i(overall mean) for each movie, i:
+```r
+# Mean:
+mu <- mean(train_set$rating)
+# Find estimates for b:
+movie_avgs <- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i = mean(rating - mu))
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/movie-effects-1.png" width = 300 height = 200>
+
+* The estimates vary substanially since some movies are trash and other movies are really good. The overall average is 3.5 so a b<sub>i</sub> of 1.5 implies a perfect 5 star rating. Let's see how much our predictions improve using this model:
+```r
+predicted_ratings <- mu + test_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  pull(b_i)
+RMSE(predicted_ratings, test_set$rating)
+#> [1] 0.989
+```
+* Can we make the RMSE drop even more with users, are different users different in terms of how they rate movies? To explore the data we can compute the average rating for user, u, for those who have rated over 100 movies:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/user-effect-hist-1.png" width = 300 height = 200>
+
+* There's a substansial variation across users since some users are very critical while others are very lenient and some are the average Joe. A further improvement to our model could be this: Y<sub>u, i</sub> = μ + b<sub>i</sub> + b<sub>u</sub> + ϵ<sub>u, i</sub>, b<sub>u</sub> is the user-specific effect. Now, if a cranky user (-b<sub>u</sub>) rates a great movie (+b<sub>i</sub>) the effects counter each other and we might be able to correctly predict this user gave a great movie a 3 instead of a 5. We could fit this model with lm but since this model is so large it will take forever to run or crash the computer. Instead, we can compute an approximation by computing the overall mean, u-hat, movie effects, b̂<sub>i</sub>, and estimating the user effects (b̂<sub>u</sub>) by taking the average of the residuals obtained after removing the overall mean and movie effects from the rating (Y<sub>u, i</sub>):
+```r
+user_avgs <- train_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u = mean(rating - mu - b_i))
+```
+* We can see how well we do with this new model by predicting values and computing the RMSE:
+```r
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  left_join(user_avgs, by='userId') %>%
+  mutate(pred = mu + b_i + b_u) %>%
+  pull(pred)
+RMSE(predicted_ratings, test_set$rating)
+#> [1] 0.89
+```
+* Example Code:
+```r
+# Creates object (year) that has the year and the tickets sold in that year:
+year = movielens %>% group_by(movieId) %>%
+     summarize(n = n(), year = as.character(first(year))) 
+year = neb %>% group_by(year) %>% summarize(year_tickets = n())
+# Gets top 25 movies released after 1993, according to highest average number of ratings per year:
+top_25 = movielens %>% 
+	filter(year >= 1993) %>%
+	group_by(movieId) %>%
+	summarize(n = n(), years = 2018 - first(year), #first(year) makes sure only 1 value passes, not 247
+				title = title[1],
+				rating = mean(rating)) %>%
+	mutate(rate = n/years) %>%
+	top_n(25, rate) %>%
+	arrange(desc(rate))
+# Plot it:
+top_25 %>% ggplot(aes(rate, rating)) + geom_point() + geom_smooth()
+# Create a new column (date) with data according to timestamp:
+movielens <- mutate(movielens, date = as_datetime(timestamp))
+# Plot average rating per week against date:
+movielens %>% mutate(date = round_date(date, unit = "week")) %>%
+	group_by(date) %>%
+	summarize(rating = mean(rating)) %>%
+	ggplot(aes(date, rating)) +
+	geom_point() +
+	geom_smooth()
+# Plot genre of movie with average and standard error:
+movielens %>% group_by(genres) %>%
+	summarize(n = n(), avg = mean(rating), se = sd(rating)/sqrt(n())) %>%
+	filter(n >= 1000) %>% 
+	mutate(genres = reorder(genres, avg)) %>%
+	ggplot(aes(x = genres, y = avg, ymin = avg - 2*se, ymax = avg + 2*se)) + 
+	geom_point() +
+	geom_errorbar() + 
+	theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+<strong>Regularization:</strong>
