@@ -1417,7 +1417,7 @@ sd(dist(x) - dist(z[,1])*sqrt(2)) # z[,1] is the 1st principal component of the 
 <img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-approx-1-1.png" width = 300 height = 300>
 
 * Notice, that each row of X was transformed using a linear trasnformation. For any row i, the 1st entry was: Z<sub>i, 1</sub> = a<sub>1, 1</sub> * X<sub>i, 1</sub> + a<sub>2, 1</sub> * X<sub>i, 2</sub> with a<sub>1, 1</sub> = 0.5 and a<sub>2, 1</sub> = 0.5. The second entry was, also, a linear transformation: Z<sub>i, 2</sub> = a<sub>1, 2</sub> * X<sub>i, 1</sub> + a<sub>2, 2</sub> * X<sub>i, 2</sub> with a<sub>1, 2</sub> = 1 and a<sub>2, 2</sub> = -1. 
-* The linear transformation can be reversed to obtain X from Z. The 1st entry is: X<sub>i, 1</sub> = b<sub>1, 1</sub> * Z<sub>i, 1</sub> + b<sub>2, 1</sub> * Z<sub>i, 2</sub> with b<sub>1, 1</sub> = 1 <- MIGHT BE WRONG CHECK DISCUSSION BOAARD and b<sub>2, 1</sub> = 0.5. And, X<sub>i, 2</sub> = b<sub>2, 1</sub> * Z<sub>i, 1</sub> + b<sub>2, 2</sub> * Z<sub>i, 2</sub> with b<sub>2, 1</sub> = 1 and b<sub>2, 2</sub> = 0.5.
+* The linear transformation can be reversed to obtain X from Z. The 1st entry is: X<sub>i, 1</sub> = b<sub>1, 1</sub> * Z<sub>i, 1</sub> + b<sub>2, 1</sub> * Z<sub>i, 2</sub> with b<sub>1, 1</sub> = 1 and b<sub>2, 1</sub> = 0.5. And, X<sub>i, 2</sub> = b<sub>1, 2</sub> * Z<sub>i, 1</sub> + b<sub>2, 2</sub> * Z<sub>i, 2</sub> with b<sub>1, 2</sub> = 1 and b<sub>2, 2</sub> = -0.5.
 * The above operations can be performed with linear algebra. The first operation would be written as:
 <img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/matrix_1.PNG" width = 200 height = 40>
 
@@ -1450,3 +1450,143 @@ sd(dist(x) - dist(z[,1]))
 * It's common to obtain data with highly correlated predictors and *principal component analysis* (PCA) can be useful for reducing the complexity of the model being fit. From what we computed, up above, the total variability can be defined as the sum of the sum of squares of the columns. We assume the columns are centered, so this sum is equivalent to the sum of the variances of each column:
 ![v_1 + v_2, \mbox{ with } v_1 = \frac{1}{N}\sum_{i=1}^N X_{i,1}^2 \mbox{ and } v_2 =  \frac{1}{N}\sum_{i=1}^N X_{i,2}^2](https://render.githubusercontent.com/render/math?math=v_1%20%2B%20v_2%2C%20%5Cmbox%7B%20with%20%7D%20v_1%20%3D%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C1%7D%5E2%20%5Cmbox%7B%20and%20%7D%20v_2%20%3D%20%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C2%7D%5E2)
 . We can compute v<sub>1</sub> and v<sub>2</sub> using: ```colMeans(x^2) #> [1] 3904 3902```. Also, we show that if we apply an orthogonal transformation the total variation remains the same: ```sum(colMeans(x^2)) #> [1] 7806 sum(colMeans(z^2)) #> [1] 7806```. But, in the transformed version (Z) 99% of the variability is in the 1st dimension while in the ogrinal version (X) the variability is distributed evenly across the dimensions.
+* The 1st *principal component* (PC) of a matrix (X) is the linear orthogonal transformation of X that maximizes the variability. The function prcomp provides this info:
+```r
+pca <- prcomp(x)
+pca$rotation
+#>         PC1    PC2
+#> [1,] -0.702  0.712
+#> [2,] -0.712 -0.702
+#Note that the first PC is almost the same as that provided by the (X1 + X2)/sqrt(2) used earlier except for, perhaps, an arbitrary sign change.
+```
+* The function PCA returns both the rotation needed to transform X so that the variability of the columns is decreasing from most variable to least (accessed with $rotation) as well as the resulting new matrix (accessed with $x). By default the columns of X are first centered. Using the matrix multiplcation, already discussed, the following are the same since the difference between elements is essentialy 0:
+```r
+a <- sweep(x, 2, colMeans(x)) 
+b <- pca$x %*% t(pca$rotation)
+max(abs(a - b))
+#> [1] 3.55e-15
+```
+* The rotation is orthogonal which means its inverse is its tranpose, so the following 2 are identical:
+```r
+a <- sweep(x, 2, colMeans(x)) %*% pca$rotation
+b <- pca$x 
+max(abs(a - b))
+#> [1] 0
+```
+* This can be visualized to see how the 1st component summarizes the data, red represents high values and blue negative values (these are called weights and patterns):
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/illustrate-pca-twin-heights-1.png" width = 300 height = 300>
+
+* This linear tranformation can be found for matricies of any dimension (p).
+* For a multidimensional matrix with X and p columns we can find the transformation that creates Z which preserves the distance between the rows, but with the variance of the columns in decreasing order. The second column is the second principal component, the third column is the third principal component, and so on. As in our example, if after a certain number of columns, say k, the variances of the columns of Z<sub>j</sub>, j > k are very small, it means these dimensions have little to contribute to the distance and we can approximate distance between any two points with just k dimensions. If k is much smaller than p, then we can achieve a very efficient summary of our data.
+* We can use the iris dataset to reduce dimensions, the data is ordered by the species. We can compute the distance between each observation and there are 3 species with 1 specie very different than the other 2:
+```r
+x <- iris[,1:4] %>% as.matrix()
+d <- dist(x)
+image(as.matrix(d), col = rev(RColorBrewer::brewer.pal(9, "RdBu")))
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/iris-distances-1.png" width = 300 height = 200>
+
+* The predictors have 4 dimensions and they're highly correlated:
+```r
+cor(x)
+#>              Sepal.Length Sepal.Width Petal.Length Petal.Width
+#> Sepal.Length        1.000      -0.118        0.872       0.818
+#> Sepal.Width        -0.118       1.000       -0.428      -0.366
+#> Petal.Length        0.872      -0.428        1.000       0.963
+#> Petal.Width         0.818      -0.366        0.963       1.000
+```
+* Applying PCA should allow us to approximate the distances with just 2 dimensions, compressing the highly correlated dimensions. Using the summary() function we can see the variability of each PC:
+```r
+pca <- prcomp(x)
+summary(pca)
+#> Importance of components:
+#>                          PC1    PC2    PC3     PC4
+#> Standard deviation     2.056 0.4926 0.2797 0.15439
+#> Proportion of Variance 0.925 0.0531 0.0171 0.00521
+#> Cumulative Proportion  0.925 0.9777 0.9948 1.00000
+```
+* The first two dimensions account for 97% of the variability. Thus we should be able to approximate the distance very well with two dimensions. We can visualize the results of PCA:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/illustrate-pca-twin-heights-iris-1.png" width = 300 height = 300>
+
+* And see that the first pattern is sepal length, petal length, and petal width (red) in one direction and sepal width (blue) in the other. The second pattern is the sepal length and petal width in one direction (blue) and petal length and petal width in the other (red). You can see from the weights that the first PC1 drives most of the variability and it clearly separates the first third of samples (setosa) from the second two thirds (versicolor and virginica). If you look at the second column of the weights, you notice that it somewhat separates versicolor (red) from virginica (blue). We can see this better by plotting the first two PCs with color representing the species:
+```r
+data.frame(pca$x[,1:2], Species=iris$Species) %>% 
+  ggplot(aes(PC1,PC2, fill = Species))+
+  geom_point(cex=3, pch=21) +
+  coord_fixed(ratio = 1)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/iris-pca-1.png" width = 500 height = 250>
+
+* The first 2 dimensions preserve distance:
+```r
+d_approx <- dist(pca$x[, 1:2])
+qplot(d, d_approx) + geom_abline(color="red")
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/dist-approx-4-1.png" width = 300 height = 200>
+
+* Example Code with tissue_gene_expression data:
+```r
+# Load and explore data:
+library(dslabs)
+data("tissue_gene_expression")
+dim(tissue_gene_expression$x) # 189 principal components by 500 observations.
+# Use prcomp to create a PCA object:
+pca = prcomp(tissue_gene_expression$x)
+# Plot first 2 components with color representing tissue type:
+data.frame(pca_1 = pca$x[,1], pca_2 = pca$x[,2], 
+			tissue = tissue_gene_expression$y) %>%
+	ggplot(aes(pca_1, pca_2, color = tissue)) +
+	geom_point()
+```
+<strong>Recommendation Systems:</strong>
+* *Recommendation systems* use ratings that users have given certain items to make specific recommendations to users. Very large companies, like Amazon, allow customers to rate their products which lets collect massive data sets that can be used to predict what rating a given user will give a specific item. Items which have higher ratings predicted for a specific user are recommended to that user. *Recommendation systems* are more complicated machine learning challenges because each outcome has a different set of predictors. For example, different users rate a different number of movies and rate different movies.. Check out the [Netflix Challenge](https://bits.blogs.nytimes.com/2009/09/21/netflix-awards-1-million-prize-and-starts-a-new-contest/) which was a challenge to find a better recommendation system ([dataset](https://www.kaggle.com/netflix-inc/netflix-prize-data), [detailed solution explanation](https://www.netflixprize.com/assets/GrandPrize2009_BPC_BellKor.pdf)).
+* We can use the movielens dataset which is another dataset of movie ratings from different users, ```data("movielens")```. The movielens table is in a tidy format and contains thousands of rows, ```head(movielens)```, each row represents 1 rating given by 1 user to a movie. We can see the number of unique users that provide ratings and for how many unique movies they provided:
+```r
+movielens %>% 
+  summarize(n_users = n_distinct(userId),
+            n_movies = n_distinct(movieId))
+#>   n_users n_movies
+#> 1     671     9066
+```
+* If we multiply those numbers we get a number much larger than 5,000,000 but, our data tables has 100,000 rows meaning not every user rated every movie. We can think of the data as a large matrix with users on the rows and movies on the columns with many empty cells. The gather() function allows us to convert to this format but, doing it for such a large datset would crash R so we need to take a subset:
+```
+userId	Forrest Gump    Pulp Fiction	Shawshank Redemption	Silence of the Lambs
+13	 5.0	          3.5	                4.5	                NA
+15	 1.0	          5.0	                2.0	               5.0
+16	 NA	          NA	                4.0	               NA
+17	 2.5	          5.0	                5.0	               4.5
+19	 5.0	          5.0	                4.0	               3.0
+20	 2.0	          0.5	                4.5	               0.5
+```
+* The task of the recommendation system can be thought of as filling in the NAs in the matrix. We can see how *sparse* the a matrix is. Below, is a matrix for a random sample of 100 movies and 100 users is shown with yellow indicating an user/movie combination for which we have a rating:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/sparsity-of-movie-recs-1.png" width = 300 height = 300>
+
+* Let's try to make predictions! The machine learning challenge here is complicated because each outcome (y) has a different set of predictors. If we're predicting the rating for movie (i) by user (u), in principle all other ratings related to movie i and by user u can be used as predictors but, different users rate a different number of movies and different movies. Also, we may be able to use information from other movies that we've determined are similar to i or from users determined to be similar to u. So, the entire matrix can be used as predictors for each cell.
+* We can start understanding the data. One thing we notice is that some movies get rated more than others. This makes sense since there are big, blockbuster movies that get rated by millions and tiny, independent movies rated by few. Also, we notice that some users are more active than others at rating movies:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/movie-id-and-user-hists-1.png" width = 400 height = 200>
+
+* This is a machine learning challenge since we have to build an algorithm based on the data and this algorithms will be used by others on new data. So we create a test/training sets to see how well our algorithm performs on new data. Also, we need to make sure we don’t include users and movies in the test set that do not appear in the training set, we remove these entries using the semi_join function:
+```r
+library(caret)
+set.seed(755)
+# Create test index:
+test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.2, 
+                                  list = FALSE)
+# Create both sets:
+train_set <- movielens[-test_index,]
+test_set <- movielens[test_index,]
+# Makes sure no new points appear in either set:
+test_set <- test_set %>% 
+  semi_join(train_set, by = "movieId") %>%
+  semi_join(train_set, by = "userId")
+```
+* We need to quantify what it means to do well (loss function), so we can compare against a baseline approach. The Netflix Challenege used the typical error, which helped it pick a winner, based on the RSME (residual mean squared error) of the test set. So we can define Y<sub>u, i</sub> as the rating for movie, i, by user, u, and Ŷ<sub>u, i</sub> is the prediction. The RMSE is defined as: 
+![\sqrt{ \frac{1}{N} \sum_{u, i} ( \hat{y}_{u, i} - y_{u, i} )^2}](https://render.githubusercontent.com/render/math?math=%5Csqrt%7B%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bu%2C%20i%7D%20(%20%5Chat%7By%7D_%7Bu%2C%20i%7D%20-%20y_%7Bu%2C%20i%7D%20)%5E2%7D)
+. N is the number of user-movie combinations and the sum is occuring over all these combinations. The RMSE can be interpretated similar to the sd, it's the typical error made when predicting a movie rating. If, the RMSE > 1 than we're usually missing by 1 or more star ratings which isn't very good. We can write a function that computes the RMSE for a vector of ratings and their corresponding predictors:
+```r
+RMSE <- function(true_ratings, predicted_ratings){
+    sqrt(mean((true_ratings - predicted_ratings)^2))
+  }
+```
+* The Netflix challenge winners implemented 2 general classes of models. One was similar to knn, where you found movies that were similar to each other and users that were similar to each other. The other one was based on an approach called *matrix factorization*, which is what we'll focus on.
+* Let's start by building a model that predicts the same rating for all movies, regardless of user and movie.
