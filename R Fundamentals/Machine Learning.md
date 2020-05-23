@@ -1667,4 +1667,260 @@ movielens %>% group_by(genres) %>%
 	theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 <strong>Regularization:</strong>
-* *Regularization* can help improve our results even more
+* *Regularization* can help improve our results even more and was 1 of the techniques used by the winner of the Netflix Challenge. Depsite the large movie to movie variation the improvement in RMSE when just the movie effect was included, was about 5%. Let's figure our why this wasn't bigger, see where we made mistakes in the 1st model (only using movies):
+```r
+test_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  mutate(residual = rating - (mu + b_i)) %>%
+  arrange(desc(abs(residual))) %>%  
+  slice(1:10) %>% 
+  pull(title)
+# 10 biggest mistakes
+#>  [1] "Kingdom, The (Riget)"            "Heaven Knows, Mr. Allison"      
+#>  [3] "American Pimp"                   "Chinatown"                      
+#>  [5] "American Beauty"                 "Apocalypse Now"                 
+#>  [7] "Taxi Driver"                     "Wallace & Gromit: A Close Shave"
+#>  [9] "Down in the Delta"               "Stalag 17"
+```
+* They all seem to be obscure movies and it the model many of them obtain large predictions. We can see what's going on by looking at the top 10 best movies and top 10 worst movies according to the movie effect:
+```r
+movie_avgs %>% left_join(movie_titles, by="movieId") %>%
+  arrange(desc(b_i)) %>% 
+  slice(1:10)  %>% 
+  pull(title)
+# Top 10 movies:
+#>  [1] "When Night Is Falling"                                  [2] "Lamerica"                                               
+#>  [3] "Mute Witness"                                           [4] "Picture Bride (Bijo photo)"                             
+#>  [5] "Red Firecracker, Green Firecracker (Pao Da Shuang Deng)"[6] "Paris, France"                                          
+#>  [7] "Faces"                                                  [8] "Maya Lin: A Strong Clear Vision"                        
+#>  [9] "Heavy"                                                  [10] "Gate of Heavenly Peace, The"
+movie_avgs %>% left_join(movie_titles, by="movieId") %>%
+  arrange(b_i) %>% 
+  slice(1:10)  %>% 
+  pull(title)
+# Worst 10 Movies:
+#>  [1] "Children of the Corn IV: The Gathering"           [2] "Barney's Great Adventure"                         
+#>  [3] "Merry War, A"                                     [4] "Whiteboyz"                                        
+#>  [5] "Catfish in Black Bean Sauce"                      [6] "Killer Shrews, The"                               
+#>  [7] "Horrors of Spider Island (Ein Toter Hing im Netz)"[8] "Monkeybone"                                       
+#>  [9] "Arthur 2: On the Rocks"                           [10] "Red Heat"
+```
+* All the movies seem really obscure so we should look at how often they're rated:
+```r
+train_set %>% count(movieId) %>% 
+  left_join(movie_avgs, by="movieId") %>%
+  left_join(movie_titles, by="movieId") %>%
+  arrange(desc(b_i)) %>% 
+  slice(1:10) %>% 
+  pull(n)
+# Top 10 movies:
+#>  [1] 1 1 1 1 3 1 1 2 1 1
+train_set %>% count(movieId) %>% 
+  left_join(movie_avgs) %>%
+  left_join(movie_titles, by="movieId") %>%
+  arrange(b_i) %>% 
+  slice(1:10) %>% 
+  pull(n)
+# Worst 10 movies
+#>  [1] 1 1 1 1 1 1 1 1 1 1
+```
+* The supposed worst and best movies were rated by very few users and in most cases, just one. These movies were mostly obsure ones because with a few users we have more uncertainty, therefore larger estimates of ±b<sub>i</sub> are more likely when few users rate the movies. These are basically noisty estimates which shouldn't be trusete, espically when it comes to predictions. Large errors can increase RMSE so it would be better to be conservative when not sure.
+* *Regularization* can be used to combat the above dilemma, it allows us to penalize large estimates that come from small sample sizes, it's similar to the Bayesian approaches which shrunk predictions. The general idea is to add a penelaty for large values of b to the sum of squares equation which is minimized. So having many large b's makes it harder to minimize the equation we're trying to minimize.
+* One way the above can be thought of as if we were to fit an effect to every rating, we could make the sum of sqaures equation by making each b match its respective rating, y, this would create an unstable estimate that changes drastically with new instances of y because y is a random variable. But, by penalizing the equation we optimize to be bigger when the estimates, b, are far from 0 we the shrink the estimates toward 0.
+* To estimate the b's instead of minimizing the RSS (residual sum of squares), which is done by least squares, we minimize this equation (penalty term = λ * ∑<sub>i</sub> * <sub>i</sub>b<sup>2</sup>):
+![\frac{1}{N}\sum_{u, i}(y_{u, i}-\mu-b_i)^2 + \lambda\sum_i b_{i}^2](https://render.githubusercontent.com/render/math?math=%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bu%2C%20i%7D(y_%7Bu%2C%20i%7D-%5Cmu-b_i)%5E2%20%2B%20%5Clambda%5Csum_i%20b_%7Bi%7D%5E2)
+. The 1st term is the RSS and the 2nd term is the penalty term that get's large when many b's are large. The values of b that minimize the equation are given by this formula (n<sub>i</sub> = number of ratings, b, for movie, i): b̂<sub>i</sub>(λ) = 1/(λ + n<sub>i</sub>) <sup>n<sub>i</sub></sup>∑<sub>u = 1</sub> (Y<sub>u, i</sub> - û). This approach will have the desired effect since when n<sub>i</sub> is very large, gives a stable estimate, then λ is effectivley ignored since n<sub>i</sub> + λ is equal to ~ n<sub>i</sub>. But, when n<sub>i</sub> is small then the estimate of b<sub>i</sub> is shrunken towards 0, the larger λ the more we shrink. Now, let's compute these regularized estimates of b<sub>i</sub> using λ = 3 (why this number is picked will be explained later):
+```r
+lambda <- 3
+mu <- mean(train_set$rating)
+movie_reg_avgs <- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i = sum(rating - mu)/(n()+lambda), n_i = n()) 
+```
+* To see how the estimates shrink we can make a plot of the regularized estimates versus the least squares estimates with the size of the circle telling us how large n<sub>i</sub> was:
+```r
+tibble(original = movie_avgs$b_i, 
+       regularlized = movie_reg_avgs$b_i, 
+       n = movie_reg_avgs$n_i) %>%
+  ggplot(aes(original, regularlized, size=sqrt(n))) + 
+  geom_point(shape=1, alpha=0.5)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/regularization-shrinkage-1.png" width = 300 height = 200>
+
+* When n is small the values are shrinking more towards 0. Now, let's look at the top 10 movies based on the regualarized estimates:
+```r
+train_set %>%
+  count(movieId) %>% 
+  left_join(movie_reg_avgs, by = "movieId") %>%
+  left_join(movie_titles, by = "movieId") %>%
+  arrange(desc(b_i)) %>% 
+  slice(1:10) %>% 
+  pull(title)
+# Top 10 movies:
+#>  [1] "Paris Is Burning"          "Shawshank Redemption, The"
+#>  [3] "Godfather, The"            "African Queen, The"       
+#>  [5] "Band of Brothers"          "Paperman"                 
+#>  [7] "On the Waterfront"         "All About Eve"            
+#>  [9] "Usual Suspects, The"       "Ikiru"
+train_set %>%
+  count(movieId) %>% 
+  left_join(movie_reg_avgs, by = "movieId") %>%
+  left_join(movie_titles, by="movieId") %>%
+  arrange(b_i) %>% 
+  select(title, b_i, n) %>% 
+  slice(1:10) %>% 
+  pull(title)
+#>  [1] "Battlefield Earth"                      [2] "Joe's Apartment"                        
+#>  [3] "Super Mario Bros."                      [4] "Speed 2: Cruise Control"                
+#>  [5] "Dungeons & Dragons"                     [6] "Batman & Robin"                         
+#>  [7] "Police Academy 6: City Under Siege"     [8] "Cats & Dogs"                            
+#>  [9] "Disaster Movie"                         [10] "Mighty Morphin Power Rangers: The Movie"
+```
+* These movie titles make much more sense. Let's see if we improve our results:
+```r
+predicted_ratings <- test_set %>% 
+  left_join(movie_reg_avgs, by = "movieId") %>%
+  mutate(pred = mu + b_i) %>%
+  pull(pred)
+RMSE(predicted_ratings, test_set$rating)
+#> [1] 0.88
+#> # A tibble: 4 x 2
+#>   method                          RMSE
+#>   <chr>                          <dbl>
+#> 1 Just the average               1.05 
+#> 2 Movie Effect Model             0.989
+#> 3 Movie + User Effects Model     0.89
+#> 4 Regularized Movie Effect Model 0.885
+```
+* We do improve our results, bringing it from 0.989 to 0.885, providing a large improvement. λ is a tuning parameter, cross-validation can be used to choose the best value for λ:
+```r
+# Series of values:
+lambdas <- seq(0, 10, 0.25)
+# Find mean and sums:
+mu <- mean(train_set$rating)
+just_the_sum <- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(s = sum(rating - mu), n_i = n())
+# Find rmses:
+rmses <- sapply(lambdas, function(l){
+  predicted_ratings <- test_set %>% 
+    left_join(just_the_sum, by='movieId') %>% 
+    mutate(b_i = s/(n_i+l)) %>%
+    mutate(pred = mu + b_i) %>%
+    pull(pred)
+  return(RMSE(predicted_ratings, test_set$rating))
+})
+qplot(lambdas, rmses)  
+# Choose value which minimizes the RMSE:
+lambdas[which.min(rmses)]
+#> [1] 3
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/best-penalty-1.png" width = 300 height = 200>
+
+* This is why 3 was picked as the value of lambda. In practice, full cross-validation should be used just on the training set without using the test set until the final assesment. Regularization can, also, be used to minimize the user effect. The equation we would need to minimize would be: 
+![\frac{1}{N}\sum_{u, i}(y_{u, i}-\mu-b_i-b_u)^2 + \lambda(\sum_i b_{i}^2 + \sum_u b_{u}^2)](https://render.githubusercontent.com/render/math?math=%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bu%2C%20i%7D(y_%7Bu%2C%20i%7D-%5Cmu-b_i-b_u)%5E2%20%2B%20%5Clambda(%5Csum_i%20b_%7Bi%7D%5E2%20%2B%20%5Csum_u%20b_%7Bu%7D%5E2))
+. The estimates to minimize this can be found, once again, with cross-validation to pick lambda:
+```r
+# Values:
+lambdas <- seq(0, 10, 0.25)
+# Find rmse:
+rmses <- sapply(lambdas, function(l){
+
+  mu <- mean(train_set$rating)
+  
+  b_i <- train_set %>% 
+    group_by(movieId) %>%
+    summarize(b_i = sum(rating - mu)/(n()+l))
+  
+  b_u <- train_set %>% 
+    left_join(b_i, by="movieId") %>%
+    group_by(userId) %>%
+    summarize(b_u = sum(rating - b_i - mu)/(n()+l))
+
+  predicted_ratings <- 
+    test_set %>% 
+    left_join(b_i, by = "movieId") %>%
+    left_join(b_u, by = "userId") %>%
+    mutate(pred = mu + b_i + b_u) %>%
+    pull(pred)
+  
+    return(RMSE(predicted_ratings, test_set$rating))
+})
+# Plot it:
+qplot(lambdas, rmses)  
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/best-lambdas-1.png" width = 300 height = 200>
+
+* You can see the optimal lambda for the user effects on the graph. For the full model (user and movie effects) the optimal lambda is 3.75.
+| method | RMSE | 
+| --- | --- |
+| Just the average | 1.048 | 
+| Movie Effect Model | 0.986 |
+| Movie + User Effects Model | 0.885 |
+| Regularized Movie Effect Model | 0.885 |
+| Regularized Movie + User Effect Model | 0.881 |
+* Regularizing the movie and user effects does improve the RMSE.
+* Example code of regularizing scores for randomly generated schools:
+```r
+# Set up and simulate the number of students in each school:
+options(digits = 7)
+set.seed(1986, sample.kind="Rounding")
+n <- round(2^rnorm(1000, 8, 1))
+# Assing a true quality for each school which is the parameter to estimate in analysis:
+set.seed(1, sample.kind="Rounding")
+mu <- round(80 + 2*rt(1000, 5))
+range(mu)
+schools <- data.frame(id = paste("PS",1:1000),
+                      size = n,
+                      quality = mu,
+                      rank = rank(-mu))
+# See the top 10 schools:
+schools %>% top_n(10, quality) %>% arrange(desc(quality))
+# Have students in each school "take" a test, simulate the results with normal distribution, avg = school quality, and sd = 30 percantage points:
+set.seed(1, sample.kind="Rounding")
+mu <- round(80 + 2*rt(1000, 5))
+scores <- sapply(1:nrow(schools), function(i){
+       scores <- rnorm(schools$size[i], schools$quality[i], 30)
+       scores
+})
+schools <- schools %>% mutate(score = sapply(scores, mean))
+# Examine the top 10 schools according to score (average test results):
+schools %>% top_n(10, score) %>% arrange(desc(score))
+# Find median school size (261):
+median(schools$size)
+# Find median school size of the top 10 schools (185.5):
+top_10_score = schools %>% top_n(10, score) %>% arrange(desc(score))
+median(top_10_score$size)
+# Find the median school size of bottom 10 schools (219):
+bottom_10_score = schools %>% top_n(-10, score) %>% arrange(score)
+median(bottom_10_score$score)
+# Plot average score vs school size and highlight top 10 schools based on true quality:
+schools %>% ggplot(aes(size, score)) +
+	geom_point(alpha = 0.5) +
+	geom_point(data = filter(schools, rank<=10), col = 2)
+# Use regularization to pick the top 10 schools:
+a <- 25
+score_reg <- sapply(scores, function(x)  overall + sum(x-overall)/(length(x)+a))
+schools %>% mutate(score_reg = score_reg) %>%
+	top_n(10, score_reg) %>% arrange(desc(score_reg))
+# Find which value of a (alpha) minimizes the RMSE (135):
+a = seq(10, 250)
+rmse <- sapply(a, function(a){
+     score_reg <- sapply(scores, function(x) overall+sum(x-overall)/(length(x)+a))
+     mean((score_reg - schools$quality)^2)
+})
+a[which.min(rmse)]
+# Rank the schools based on average obained with the best alpha:
+alpha = a[which.min(rmse)]
+score_reg <- sapply(scores, function(x)  overall + sum(x-overall)/(length(x)+alpha))
+schools %>% mutate(score_reg = score_reg) %>%
+	top_n(10, score_reg) %>% arrange(desc(score_reg))
+# Run the regularization without the overall, which results in a value of aplha which ins't optimal (10):
+a <- seq(10,250)
+rmse <- sapply(a, function(a){
+    score_reg <- sapply(scores, function(x) sum(x)/(length(x)+a))
+    sqrt(mean((score_reg - schools$quality)^2))
+})
+a[which.min(rmse)]
+```
+* 
