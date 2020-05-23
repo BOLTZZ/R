@@ -1923,4 +1923,5 @@ rmse <- sapply(a, function(a){
 })
 a[which.min(rmse)]
 ```
-* 
+Matrix Factorization:
+* *Matrix Factorization* is a widely used concept in machine learning that that's related to *factor analysis* and *single value decomposition*.
