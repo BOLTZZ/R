@@ -1924,4 +1924,124 @@ rmse <- sapply(a, function(a){
 a[which.min(rmse)]
 ```
 Matrix Factorization:
-* *Matrix Factorization* is a widely used concept in machine learning that that's related to *factor analysis* and *single value decomposition*.
+* *Matrix Factorization* is a widely used concept in machine learning that that's related to *factor analysis*, *singular value decomposition*, and *principal component analysis*.
+* Y<sub>u, i</sub> = μ + b<sub>i</sub> + b<sub>u</sub> + ϵ<sub>u, i</sub> has already been defined which accounts for movie to movie differences through b<sub>i</sub> and user to user differences through b<sub>u</sub>. But the model leaves out an important source of variation that groups of movies have similar rating patterns and groups of user have similar rating patterns. We can discover these patterns by studying the residuals obtained after fitting the model: r<sub>u, i</sub> = Y<sub>u, i</sub> - b̂<sub>i</sub> - b̂<sub>u</sub>. To study these residuals we can convert the data to a matrix so each user gets a row and each movie gets a column. We'll consider a small subset of the data with movies that have many ratings and users that have rated many movies:
+```r
+# Get training and testing sets:
+train_small <- movielens %>% 
+  group_by(movieId) %>%
+  filter(n() >= 50 | movieId == 3252) %>% ungroup() %>% 
+  group_by(userId) %>%
+  filter(n() >= 50) %>% ungroup()
+
+y <- train_small %>% 
+  select(userId, movieId, rating) %>%
+  spread(movieId, rating) %>%
+  as.matrix()
+# To help facilitate exploration we'll add column and row names, columns names = movie names:
+rownames(y)<- y[,1]
+y <- y[,-1]
+colnames(y) <- with(movie_titles, title[match(colnames(y), movieId)])
+# Convert to residuals by removing the column and row average:
+y <- sweep(y, 1, rowMeans(y, na.rm=TRUE))
+y <- sweep(y, 2, colMeans(y, na.rm=TRUE))
+```
+* If the model we've been using describes all the signals and the epsilons (ϵ) are just noise, then the residuals for different movies should be independent of each other. But, they're not, here's a plot of the residuals for 2 different movies for each graph (they're very correlated):
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/movie-cor-1.png" width = 300 height = 200>
+
+* This tells us the users that like 1 movie more than expected (based on movie and user effects) also liked the other movie more than expected. We can look at the pair-wise correlation:
+```r
+x <- y[, c(m_1, m_2, m_3, m_4, m_5)]
+short_names <- c("Godfather", "Godfather2", "Goodfellas",
+                 "You've Got", "Sleepless")
+colnames(x) <- short_names
+cor(x, use="pairwise.complete")
+#>            Godfather Godfather2 Goodfellas You've Got Sleepless
+#> Godfather      1.000      0.829      0.444     -0.440    -0.378
+#> Godfather2     0.829      1.000      0.521     -0.331    -0.358
+#> Goodfellas     0.444      0.521      1.000     -0.481    -0.402
+#> You've Got    -0.440     -0.331     -0.481      1.000     0.533
+#> Sleepless     -0.378     -0.358     -0.402      0.533     1.000
+```
+* We can see there's a positive correlation between the gangster movies and there's a positive correlation between the romatice movies (You've Got Mail, Sleepless In Seattle). Also, there's a negative correlation between the gangster movies and romatic comedies, this means users that like gangster movies a lot tend to not like romatic movies and vice versa. This analyzation tells us there's a structure in the data the model doesn't account for.
+* The above can be modeled with matrix factorization. We're going to define *factors*, we can use the simulated data as residuals:
+```r
+round(r, 1)
+#>    Godfather Godfather2 Goodfellas You've Got Sleepless
+#> 1        2.0        2.3        2.2       -1.8      -1.9
+#> 2        2.0        1.7        2.0       -1.9      -1.7
+#> 3        1.9        2.4        2.1       -2.3      -2.0
+#> 4       -0.3        0.3        0.3       -0.4      -0.3
+#> 5       -0.3       -0.4        0.3        0.2       0.3
+#> 6       -0.1        0.1        0.2       -0.3       0.2
+#> 7       -0.1        0.0       -0.2       -0.2       0.3
+#> 8        0.2        0.2        0.1        0.0       0.4
+#> 9       -1.7       -2.1       -1.8        2.0       2.4
+#> 10      -2.3       -1.8       -1.7        1.8       1.7
+#> 11      -1.7       -2.0       -2.1        1.9       2.3
+#> 12      -1.8       -1.7       -2.1        2.3       2.0
+```
+* There seems to be a pattern here, gangster movie effect and romantic comedy effect. In fact, there's a very strong correlation pattern:
+```r
+cor(r) 
+#>            Godfather Godfather2 Goodfellas You've Got Sleepless
+#> Godfather      1.000      0.980      0.978     -0.974    -0.966
+#> Godfather2     0.980      1.000      0.983     -0.987    -0.992
+#> Goodfellas     0.978      0.983      1.000     -0.986    -0.989
+#> You've Got    -0.974     -0.987     -0.986      1.000     0.986
+#> Sleepless     -0.966     -0.992     -0.989      0.986     1.000
+```
+* The above structure can be explained with the following coefficients (gangster and romatic comedies):
+```r
+# Vector q:
+#>      Godfather Godfather2 Goodfellas You've Got Sleepless
+#> [1,]         1          1          1         -1        -1
+```
+* We can narrow down the users to 3 groups (those that like gangster movies and hate romantic comedies, those who don't care, and those who like romantic comdeis and hate gangster movies):
+```r
+# Vector p:
+#>      1 2 3 4 5 6 7 8  9 10 11 12
+#> [1,] 2 2 2 0 0 0 0 0 -2 -2 -2 -2
+```
+* This shows we can reconstruct the data, which had 60 values, with a couple of vectors totaling to 17 values. We can model the 60 residuals with the 17 parameter model (q = movie vector, p = user vector): r<sub>u, i</sub> ≈ p<sub>u</sub> * q<sub>i</sub>. Now, we can explain much more of the variance with a model like this: Y<sub>u, i</sub> = μ + b<sub>i</sub> + b<sub>u</sub> + p<sub>u</sub>q<sub>i</sub> + ϵ<sub>u, i</sub>.
+* But, our data is much more complicated than just gangster movies and romantic comedies. For example, adding the movie (Scent of a Woman) changes the data to:
+```r
+#>    Godfather Godfather2 Goodfellas You've Got Sleepless Scent
+#> 1        0.5        0.6        1.6       -0.5      -0.5  -1.6
+#> 2        1.5        1.4        0.5       -1.5      -1.4  -0.4
+#> 3        1.5        1.6        0.5       -1.6      -1.5  -0.5
+#> 4       -0.1        0.1        0.1       -0.1      -0.1   0.1
+#> 5       -0.1       -0.1        0.1        0.0       0.1  -0.1
+#> 6        0.5        0.5       -0.4       -0.6      -0.5   0.5
+#> 7        0.5        0.5       -0.5       -0.6      -0.4   0.4
+#> 8        0.5        0.6       -0.5       -0.5      -0.4   0.4
+#> 9       -0.9       -1.0       -0.9        1.0       1.1   0.9
+#> 10      -1.6       -1.4       -0.4        1.5       1.4   0.5
+#> 11      -1.4       -1.5       -0.5        1.5       1.6   0.6
+#> 12      -1.4       -1.4       -0.5        1.6       1.5   0.6
+```
+* Now we see another factor that divides users into those that love, those that hate, and those that don't care for Al Pacino. The new correlation is more complicated:
+```r
+#>            Godfather Godfather2 Goodfellas    YGM     SS     SW
+#> Godfather      1.000      0.997      0.562 -0.997 -0.996 -0.571
+#> Godfather2     0.997      1.000      0.577 -0.998 -0.999 -0.583
+#> Goodfellas     0.562      0.577      1.000 -0.552 -0.583 -0.994
+#> YGM           -0.997     -0.998     -0.552  1.000  0.998  0.558
+#> SS            -0.996     -0.999     -0.583  0.998  1.000  0.588
+#> SW            -0.571     -0.583     -0.994  0.558  0.588  1.000
+```
+* And, to explain structure we need 2 factors (1st row divides gangster from romantice comedies and 2nd row divides Al Pacino movies from non Al Pacino movies):
+```r
+# Vector q:
+#>      Godfather Godfather2 Goodfellas You've Got Sleepless Scent
+#> [1,]         1          1          1         -1        -1    -1
+#> [2,]         1          1         -1         -1        -1     1
+```
+* We, also, have 2 sets of coefficents to describe the users:
+```r
+# Vector p:
+#>         1   2   3 4 5   6   7   8  9   10   11   12
+#> [1,]  1.0 1.0 1.0 0 0 0.0 0.0 0.0 -1 -1.0 -1.0 -1.0
+#> [2,] -0.5 0.5 0.5 0 0 0.5 0.5 0.5  0 -0.5 -0.5 -0.5
+```
+* The new mode has more parameters, but still less than the original data: Y<sub>u, i</sub> = μ + b<sub>i</sub> + b<sub>u</sub> + p<sub>u, 1</sub>q<sub>1, i</sub> + p<sub>u, 2</sub>q<sub>2, i</sub> + ϵ<sub>u, i</sub>. And, we can fit this model with, like the least squares method. But, for the Netflix Challenge they used regularization and penalize not just user and movie effects but large values of the factors p or q. We need to find the structure using the acutal data which can be accomplished via pca or svd. 
