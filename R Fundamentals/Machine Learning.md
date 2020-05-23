@@ -1922,6 +1922,26 @@ data.frame(pca_1 = pca$x[,1], pca_2 = pca$x[,2],
 			tissue = tissue_gene_expression$y) %>%
 	ggplot(aes(pca_1, pca_2, color = tissue)) +
 	geom_point()
+# For each observation, compute the average across all predictors and plot against the first PC representing tissue, report correlation:
+avgs <- rowMeans(tissue_gene_expression$x)
+data.frame(pca_1 = pca$x[,1], avg = avgs, 
+			tissue = tissue_gene_expression$y) %>%
+ggplot(aes(avgs, pca_1, color = tissue)) +
+	geom_point()
+cor(avgs, pca$x[,1]) #0.597
+# Redo the PCA but only after removing the center:
+x <- with(tissue_gene_expression, sweep(x, 1, rowMeans(x)))
+pc <- prcomp(x)
+data.frame(pca_1 = pca$x[,1], pca_2 = pca$x[,2], 
+	   tissue = tissue_gene_expression$y) %>%
+	   ggplot(aes(pca_1, pca_2, color = tissue)) +
+	   geom_point()
+# Create boxplots for the 1st ten PCs:
+for(i in 1:10){
+	boxplot(pca$x[,i] ~ tissue_gene_expression$y, main = paste("PC", i))
+}
+# Plot the percent variance explained by PC number:
+plot(summary(pca)$importance[3,])
 ```
 Matrix Factorization:
 * *Matrix Factorization* is a widely used concept in machine learning that that's related to *factor analysis*, *singular value decomposition*, and *principal component analysis*.
@@ -2075,3 +2095,198 @@ plot(var_explained)
 * The first PC shows difference between critically acclaimed movies one 1 side and Hollywood blockbusters on the other side. Since the PC1 is on the x-axis for the graph, the graph has critically acclaimed movies on 1 side and blockbusters on the other, it's seperating out movies that have structure adn determening users that like these movies over others and vice versa. 
 * The second PC, also, captures structure in the data. Looking at 1 extreme of the 2nd PC we see artsy independent films while looking at the other side shows nerd favorites. 
 * Using pca we've seen that a matrix factorization approach can find important structure in the data. To fit the matrix factorization model, shown earlier, that takes into account missing data can be accomplished with the recommenderlab package since it fits these type of models.
+* SVD tells us that decompose an N * p matrix Y with p < N as: Y = UDV with U and V orthogonal dimensions of N * p and p * p, repsectivley, and D a p * p diagonal with the values of the diagonal decreasing: d<sub>1, 1</sub> ≥ d<sub>2, 2</sub> ≥ ... d<sub>p, p</sub>.
+* Excercise:
+```r
+# We'll construct a data set that represent grade scores for 100 students in 24 different subjects. The overall average has been removed so this data represents the percentage point each student received above or below the average test score. So a 0 represents an average grade (C), a 25 is a high grade (A+), and a -25 represents a low grade (F). You can simulate the data like this:
+set.seed(1987, sample.kind="Rounding")
+n <- 100
+k <- 8
+Sigma <- 64  * matrix(c(1, .75, .5, .75, 1, .5, .5, .5, 1), 3, 3) 
+m <- MASS::mvrnorm(n, rep(0, 3), Sigma)
+m <- m[order(rowMeans(m), decreasing = TRUE),]
+y <- m %x% matrix(rep(1, k), nrow = 1) + matrix(rnorm(matrix(n*k*3)), n, k*3)
+colnames(y) <- c(paste(rep("Math",k), 1:k, sep="_"),
+                 paste(rep("Science",k), 1:k, sep="_"),
+                 paste(rep("Arts",k), 1:k, sep="_"))
+# Our goal is to describe the student performances as succinctly as possible.
+# The 24 test scores for the 100 students can be visualized by plotting an image:
+my_image <- function(x, zlim = range(x), ...){
+	colors = rev(RColorBrewer::brewer.pal(9, "RdBu"))
+	cols <- 1:ncol(x)
+	rows <- 1:nrow(x)
+	image(cols, rows, t(x[rev(rows),,drop=FALSE]), xaxt = "n", yaxt = "n",
+			xlab="", ylab="",  col = colors, zlim = zlim, ...)
+	abline(h=rows + 0.5, v = cols + 0.5)
+	axis(side = 1, cols, colnames(x), las = 2)
+}
+my_image(y)
+# The correlation of the test scores can be directly examined:
+my_image(cor(y), zlim = c(-1,1))
+range(cor(y))
+# [1] 0.4855371 1.0000000
+axis(side = 2, 1:ncol(y), rev(colnames(y)), las = 2)
+# The SVD function will return U, V, and the diagonal entries of D:
+s <- svd(y)
+names(s)
+# The following can check if the SVD works:
+y_svd <- s$u %*% diag(s$d) %*% t(s$v)
+max(abs(y - y_svd))
+# Compute the sum of squares for columns of Y:
+ss_y <- apply(y^2, 2, sum)
+# Compute the sum of squares for the columns of the transformed YV:
+ss_yv <- apply((y%*%s$v)^2, 2, sum)
+sum(ss_y) # 175434.6
+sum(ss_yv) # 175434.6
+# Plot ss_yv and ss_y and examine any patterns:
+plot(ss_y)
+plot(ss_yv)
+# Plot the square root of ss_yv versus the diagonal entries of D:
+plot(s$d, sqrt(ss_yv))
+# What percent of the variability is explained by the 1st three columns of YV (99%):
+sum(s$d[1:3]^2) / sum(s$d^2)
+# We can avoid creating matrix diag(s$d) using sweep():
+identical(s$u %*% diag(s$d), sweep(s$u, 2, s$d, FUN = "*")) # So sweep(s$u, 2, s$d, FUN = "*") works!
+# Compute the average for each student and plot it against U1d11:
+plot(y_svd[,1], rowMeans(y)) # Linearly increasing relationship
+# The 1st column of V is close to being constant which implies that the first column of YV is the sum of the rows of Y multiplied by some constant, and is thus proportional to an average:
+my_image(s$v)
+```
+Clustering:
+* 
+
+Clustering Example:
+```r
+data("tissue_gene_expression")
+# Using the tissue_gene_expression dataset, remove row means and compute distance between each observation:
+d <- dist(tissue_gene_expression$x - rowMeans(tissue_gene_expression$x))
+# Make a hierarchal clustering plot with tissue types as labels:
+h <- hclust(d)
+plot(h, cex = 0.75)
+# Run k-mean clustering with k = 7. Make a table comparing the identified clusters to the actual tissue types:
+cl <- kmeans(tissue_gene_expression$x, centers = 7)
+table(cl$cluster, tissue_gene_expression$y)
+# Select the 50 most variable genes. Make sure the observations show up in the columns, that the predictor are centered, and add a color bar to show the different tissue types:
+library(RColorBrewer)
+sds <- matrixStats::colSds(tissue_gene_expression$x)
+ind <- order(sds, decreasing = TRUE)[1:50]
+colors <- brewer.pal(7, "Dark2")[as.numeric(tissue_gene_expression$y)]
+heatmap(t(tissue_gene_expression$x[,ind]), col = brewer.pal(11, "RdBu"), scale = "row", ColSideColors = colors)
+```
+<strong>Titanic Example:</strong>
+```r
+library(titanic)    # loads titanic_train data frame
+library(caret)
+library(tidyverse)
+library(rpart)
+# 3 significant digits
+options(digits = 3)
+# clean the data - `titanic_train` is loaded with the titanic package
+titanic_clean <- titanic_train %>%
+    mutate(Survived = factor(Survived),
+           Embarked = factor(Embarked),
+           Age = ifelse(is.na(Age), median(Age, na.rm = TRUE), Age), # NA age to median age
+           FamilySize = SibSp + Parch + 1) %>%    # count family members
+    select(Survived,  Sex, Pclass, Age, Fare, SibSp, Parch, FamilySize, Embarked)
+test_error = cm_test$overall["Accuracy"]
+test_f1 = F_meas(data = y_hat, reference = factor(test_set$sex))
+tibble(train = train_error, test = test_error, f1_train = train_f1, f1_test = test_f1)
+})
+
+set.seed(42, sample.kind = "Rounding")
+test_index = createDataPartition(titanic_clean$Survived, times = 1, p = 0.2, list = FALSE)
+test_set = titanic_clean[test_index, ]
+train_set = titanic_clean[-test_index, ]
+nrow(train_set)
+nrow(test_set)
+mean(test_set$Survived == 1)
+
+set.seed(3, sample.kind = "Rounding")
+guess <- sample(c(0,1), nrow(test_set), replace = TRUE)
+mean(guess == test_set$Survived)
+
+train_set %>% group_by(Sex) %>% summarize(mean(Survived == 1))
+
+based_on_sex = ifelse(test_set$Sex == "male", 0, 1)
+mean(based_on_sex == test_set$Survived)
+
+train_set %>% group_by(Pclass) %>% summarize(mean(Survived == 1))
+
+based_on_class = ifelse(test_set$Pclass == 1, 1, 0)
+mean(based_on_class)
+
+train_set %>% group_by(Sex, Pclass) %>% summarize(mean(Survived == 1))
+
+sex_and_class = ifelse(test_set$Sex == "female" & test_set$Pclass != 3, 1, 0)
+mean(sex_and_class == test_set$Survived)
+
+based_on_sex = ifelse(test_set$Sex == "male", 0, 1) %>% factor(levels = levels(test_set$Survived))
+based_on_class = ifelse(test_set$Pclass == 1, 1, 0) %>% factor(levels = levels(test_set$Survived))
+sex_and_class = ifelse(test_set$Sex == "female" & test_set$Pclass != 3, 1, 0) %>% factor(levels = levels(test_set$Survived))
+confusionMatrix(data = based_on_sex, reference = test_set$Survived)
+confusionMatrix(data = based_on_class, reference = test_set$Survived)
+confusionMatrix(data = sex_and_class, reference = test_set$Survived)
+
+sex_f1 = F_meas(data = based_on_sex, reference = test_set$Survived)
+class_f1 = F_meas(data = based_on_class, reference = test_set$Survived)
+sex_class_f1 = F_meas(data = sex_and_class, reference = test_set$Survived)
+sex_f1
+class_f1
+sex_class_f1
+
+set.seed(1, sample.kind = "Rounding")
+lda = train(Survived ~ Fare, method = "lda", data = train_set)
+y_hat_lda <- predict(lda, test_set)
+confusionMatrix(data = y_hat, reference = test_set$Survived)$overall["Accuracy"]
+set.seed(1, sample.kind = "Rounding")
+qda= train(Survived ~ Fare, method = "qda", data = train_set)
+y_hat_qda <- predict(qda, test_set)
+confusionMatrix(data = y_hat_qda, reference = test_set$Survived)$overall["Accuracy"]
+
+set.seed(1, sample.kind = "Rounding")
+glm = train(Survived ~ Age, method = "glm", data = train_set)
+y_hat_glm <- predict(glm, test_set)
+mean(y_hat_glm == test_set$Survived)
+set.seed(1, sample.kind = "Rounding")
+glm_4 = train(Survived ~ Age + Sex + Pclass + Fare, method = "glm", data = train_set)
+y_hat_glm_4 <- predict(glm_4, test_set)
+mean(y_hat_glm_4 == test_set$Survived)
+set.seed(1, sample.kind = "Rounding")
+glm_all = train(Survived ~ ., method = "glm", data = train_set)
+y_hat_glm_all <- predict(glm_all, test_set)
+mean(y_hat_glm_all == test_set$Survived)
+
+set.seed(6, sample.kind = "Rounding")
+knn = train(Survived ~., method = "knn", data = train_set, tuneGrid = data.frame(k = seq(3,51,2)))
+knn$bestTune$k
+
+plot(knn)
+
+y_hat_knn = predict(knn, test_set)
+mean(y_hat_knn == test_set$Survived)
+
+control = trainControl(method = "cv", number = 10, p = 0.9)
+set.seed(8, sample.kind = "Rounding")
+new_knn = train(Survived ~., method = "knn", data = train_set, tuneGrid = data.frame(k = seq(3, 51, 2)), trControl = control)
+new_knn$bestTune$k
+y_hat_new = predict(new_knn, test_set)
+mean(y_hat_new == test_set$Survived)
+
+set.seed(10, sample.kind = "Rounding")
+dec_tree = train(Survived ~., method = "rpart", data = train_set, tuneGrid = data.frame(cp = seq(0, 0.05, 0.002)))
+dec_tree$bestTune$cp
+y_hat_tree = predict(dec_tree, test_set)
+tree_confusion = confusionMatrix(data = y_hat_tree, reference = test_set$Survived)
+tree_confusion$overall["Accuracy"]
+
+plot(dec_tree$finalModel, margin = 0.1)
+text(dec_tree$finalModel)
+
+set.seed(14, sample.kind = "Rounding")
+forest = train(Survived ~., method = "rf", data = train_set, tuneGrid = data.frame(mtry = seq(1, 7)), ntree = 100)
+forest$bestTune$mtry
+y_hat_forest = predict(forest, test_set)
+mean(y_hat_forest == test_set$Survived)
+imp = varImp(forest)
+imp
+```
