@@ -1017,7 +1017,7 @@ confusionMatrix(predict(train_rf_2, mnist_27$test), mnist_27$test$y)$overall["Ac
 * There are several ways to control the smoothness of the random forest estimate. One way is to limit the size of each node, requiring the number of points per node to be larger (minsplit). Also, we can use a random selection of features to split partitions. Specifically, when building each tree at each recursive partition, we only consider a randomly selected subset of predictors to check for the best split and every tree has a different random selection of features. This reduces correlation between trees in the forest, which, in turn, improves prediction accuracy. The argument for this tuning parameter in the random forest function is mtry but each ranomd forest implementation has a different name, looking at the help file to figure out which one. 
 * A disadvantage of random forest is we lose interpretability, we're averaging hundres or thousands of trees into a forest. However, there's a measure called *variable importance* that helps us interpret the results, it tells us how much each predictor influences the final predictions.
 
-<strong>Caret Package:</strong>
+Caret Package:
 * The algorithms we've learned so far (logistic regression, knn, random forests, and etc) are a small subset of all the algorithms out there. Many of these algorithms are implemented in R but, they're distributed across a wide array of packages, developed by different authors, and use different syntax.
 * The caret package tries to consolidate these algorithms and provide consistency and contains more than 200 different methods that are summarize in this [site](http://topepo.github.io/caret/available-models.html). Caret doesn't automatically install the packages needed to run these methods so to implement a package through caret you still need to install the library. The required packages for each method is included [here](http://topepo.github.io/caret/train-models-by-tag.html).
 * The caret package, also, provides a function that performs cross-validation.
@@ -1373,172 +1373,7 @@ y_hat <- ifelse(votes>=0.5, 7, 2)
 # Average this ensemble to get an accuracy of 83%
 mean(y_hat == mnist_27$test$y)
 ```
-<strong>Dimension Reduction:</strong>
-* A typical machine learning challenge will include a large number of predictors, which makes visualization somewhat challenging. For example, to compare each of the 784 features in our predicting digits example, we would have to create, for example, 306,936 scatterplots. Creating one single scatter-plot of the data is impossible due to the high dimensionality.
-* The general idea behind *dimension reduction* is to reduce the dimension of a dataset while preserving important features, like preserving the distrance between observations, visualization becomes feasible with fewer dimensions. Allowing this to happen is the *singular value decomposition*.
-* We'll use twin heights data (by simulating it) with pairs of adults and children. We can simulate 100 two-dimensional points representing the number of standard deviations each indivual is from the mean height (each point is a pair of twins). This can be done with the mvrnorm function from the MASS package to simulate bivariate normal data:
-```r
-set.seed(1988, sample.kind = "Rounding")
-library(MASS)
-# Set number of points to 100
-n <- 100
-Sigma <- matrix(c(9, 9 * 0.9, 9 * 0.92, 9 * 1), 2, 2)
-x <- rbind(mvrnorm(n / 2, c(69, 69), Sigma),
-           mvrnorm(n / 2, c(55, 55), Sigma))
-```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-illustration-1.png" width = 300 height = 300>
-
-* The correlation is pretty high and there are 2 groups of twins, the adults on top right points and the children on the bottom left points. We can reduce the dimensions down from 2 to 1 while keeping important characteristics, like the observations cluster into 2 groups. Specifically, we want an 1-dimensional summary of our predictors from which we can approximate the distance between any 2 observations. 
-* We can start with a naive approach of just approximating on 1 dimension and completley forgetting about the other:
-```r
-d <- dist(x) # Set d as the distance between all the points in x (the dataset).
-z <- x[,1] # Just using 1 dimension now (x[,1]).
-```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/one-dim-approx-to-dist-1.png" width = 300 height = 300>
-
-* The above is the approximate distances vs the original distances. The plot looks the same if we use the 2nd dimension and we obtain a general underestimation. This is to be expected since we're adding more positive quantaties in the distance calculation as we increase the number of dimensions. We can use the below equation to make the distance go way down:
-![\sqrt{ \frac{1}{2} \sum_{j=1}^2 (X_{i,j}-X_{i,j})^2 }](https://render.githubusercontent.com/render/math?math=%5Csqrt%7B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bj%3D1%7D%5E2%20(X_%7Bi%2Cj%7D-X_%7Bi%2Cj%7D)%5E2%20%7D%2C)
-
-* And. we can divide the distance by √2 to get the correlation:
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-approx-1-1.png" width = 300 height = 300>
-
-* We can find the typical distance: ```sd(dist(x) - dist(z)*sqrt(2))``` which is ~ 1.2. Looking at the previous scatterplot, we can see the distance of any 2 points would be the length of a line between them. We can plot the difference versus the average:
-```r
-z  <- cbind((x[,2] + x[,1])/2,  x[,2] - x[,1])
-```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/rotation-1.png" width = 300 height = 300>
-
-* The distance between the points is explained by the 1st dimension, the average. Which means we can ignore the 2nd dimension and not lose too much information. If the line is completely flat, we lose no information at all. Using the first dimension of this transformed matrix we obtain an even better approximation:
-```r
-sd(dist(x) - dist(z[,1])*sqrt(2)) # z[,1] is the 1st principal component of the matrix x.
-#> [1] 0.315
-# The typical difference improved by ~35%
-```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-approx-1-1.png" width = 300 height = 300>
-
-* Notice, that each row of X was transformed using a linear trasnformation. For any row i, the 1st entry was: Z<sub>i, 1</sub> = a<sub>1, 1</sub> * X<sub>i, 1</sub> + a<sub>2, 1</sub> * X<sub>i, 2</sub> with a<sub>1, 1</sub> = 0.5 and a<sub>2, 1</sub> = 0.5. The second entry was, also, a linear transformation: Z<sub>i, 2</sub> = a<sub>1, 2</sub> * X<sub>i, 1</sub> + a<sub>2, 2</sub> * X<sub>i, 2</sub> with a<sub>1, 2</sub> = 1 and a<sub>2, 2</sub> = -1. 
-* The linear transformation can be reversed to obtain X from Z. The 1st entry is: X<sub>i, 1</sub> = b<sub>1, 1</sub> * Z<sub>i, 1</sub> + b<sub>2, 1</sub> * Z<sub>i, 2</sub> with b<sub>1, 1</sub> = 1 and b<sub>2, 1</sub> = 0.5. And, X<sub>i, 2</sub> = b<sub>1, 2</sub> * Z<sub>i, 1</sub> + b<sub>2, 2</sub> * Z<sub>i, 2</sub> with b<sub>1, 2</sub> = 1 and b<sub>2, 2</sub> = -0.5.
-* The above operations can be performed with linear algebra. The first operation would be written as:
-<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/matrix_1.PNG" width = 200 height = 40>
-
-* And, it can be transformed back by multiplying by A<sup>-1</sup>:
-<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/matrix_2.PNG" width = 200 height = 40>
-
-* Dimension reduction can often be described as applying a transformation A to a matrix X with many columns that moves the information contained in X to the first few columns of Z = AX, then keeping just these few informative columns, thus reducing the dimension of the vectors contained in the rows.
-* In the first example, we divided by √2 to account for the change from a 2 dimension distance to a 1 dimension distance. But, we can guaruntee the distance scales remain the same if the colums of A are re-scaled to assure the sum of squares is 1:
-![a_{1,1}^2 + a_{2,1}^2 = 1\mbox{ and }](https://render.githubusercontent.com/render/math?math=a_%7B1%2C1%7D%5E2%20%2B%20a_%7B2%2C1%7D%5E2%20%3D%201%5Cmbox%7B%20and%20%7D)
-and 
-![a_{1,2}^2 + a_{2,2}^2=1 ](https://render.githubusercontent.com/render/math?math=a_%7B1%2C2%7D%5E2%20%2B%20a_%7B2%2C2%7D%5E2%3D1%20). And, the correlation of the columns is 0:
-![a_{1,1} a_{1,2} + a_{2,1} a_{2,2} = 0.](https://render.githubusercontent.com/render/math?math=a_%7B1%2C1%7D%20a_%7B1%2C2%7D%20%2B%20a_%7B2%2C1%7D%20a_%7B2%2C2%7D%20%3D%200.)
-
-* Remember that if the columns are centered to have average 0, then the sum of squares is equivalent to the variance or standard deviation squared.
-* To achieve *orthogonality* in the 1st example we have to multiply the 1st set of coefficents (1st column of A) by √2 and the 2nd by 1/√2 so we have the same exact distances for both dimensions:
-```r
-z[,1] <- (x[,1] + x[,2]) / sqrt(2)
-z[,2] <- (x[,2] - x[,1]) / sqrt(2)
-# We get a transformation that preserves the distance between any 2 points:
-max(dist(z) - dist(x))
-#> [1] 3.24e-14
-# We, also, get an improved approximation if we use the 1st dimension:
-sd(dist(x) - dist(z[,1]))
-#> [1] 0.315
-```
-* In this case, Z is an orthogonal rotation of X: it preserves the distances between rows. By using the above transformation we can summarize the distance between any 2 pairs of twins with just 1 dimension. Plotting the 1 dimensional data, clearly shows their are 2 groups (adult and children) thus, the transformation preserves the distance:
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/twins-pc-1-hist-1.png" width = 300 height = 200>
-
-* Loss of information was kept at a minimum as the dimensions were changed from 2 to 1. The reason this could happen was because the columns of X were very correlated: ```cor(x[,1], x[,2]) #Correlation was 0.988```. And, the transformation produced uncorrelated columns with "independent" information in each column: ```cor(z[,1], z[,2]) #Correlation is 0.0876```. One way this insight may be useful in a machine learning application is that we can reduce the complexity of a model by using just Z<sub>1</sub> rather than both  X<sub>1</sub> and X<sub>2</sub>.
-* It's common to obtain data with highly correlated predictors and *principal component analysis* (PCA) can be useful for reducing the complexity of the model being fit. From what we computed, up above, the total variability can be defined as the sum of the sum of squares of the columns. We assume the columns are centered, so this sum is equivalent to the sum of the variances of each column:
-![v_1 + v_2, \mbox{ with } v_1 = \frac{1}{N}\sum_{i=1}^N X_{i,1}^2 \mbox{ and } v_2 =  \frac{1}{N}\sum_{i=1}^N X_{i,2}^2](https://render.githubusercontent.com/render/math?math=v_1%20%2B%20v_2%2C%20%5Cmbox%7B%20with%20%7D%20v_1%20%3D%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C1%7D%5E2%20%5Cmbox%7B%20and%20%7D%20v_2%20%3D%20%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C2%7D%5E2)
-. We can compute v<sub>1</sub> and v<sub>2</sub> using: ```colMeans(x^2) #> [1] 3904 3902```. Also, we show that if we apply an orthogonal transformation the total variation remains the same: ```sum(colMeans(x^2)) #> [1] 7806 sum(colMeans(z^2)) #> [1] 7806```. But, in the transformed version (Z) 99% of the variability is in the 1st dimension while in the ogrinal version (X) the variability is distributed evenly across the dimensions.
-* The 1st *principal component* (PC) of a matrix (X) is the linear orthogonal transformation of X that maximizes the variability. The function prcomp provides this info:
-```r
-pca <- prcomp(x)
-pca$rotation
-#>         PC1    PC2
-#> [1,] -0.702  0.712
-#> [2,] -0.712 -0.702
-#Note that the first PC is almost the same as that provided by the (X1 + X2)/sqrt(2) used earlier except for, perhaps, an arbitrary sign change.
-```
-* The function PCA returns both the rotation needed to transform X so that the variability of the columns is decreasing from most variable to least (accessed with $rotation) as well as the resulting new matrix (accessed with $x). By default the columns of X are first centered. Using the matrix multiplcation, already discussed, the following are the same since the difference between elements is essentialy 0:
-```r
-a <- sweep(x, 2, colMeans(x)) 
-b <- pca$x %*% t(pca$rotation)
-max(abs(a - b))
-#> [1] 3.55e-15
-```
-* The rotation is orthogonal which means its inverse is its tranpose, so the following 2 are identical:
-```r
-a <- sweep(x, 2, colMeans(x)) %*% pca$rotation
-b <- pca$x 
-max(abs(a - b))
-#> [1] 0
-```
-* This can be visualized to see how the 1st component summarizes the data, red represents high values and blue negative values (these are called weights and patterns):
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/illustrate-pca-twin-heights-1.png" width = 300 height = 300>
-
-* This linear tranformation can be found for matricies of any dimension (p).
-* For a multidimensional matrix with X and p columns we can find the transformation that creates Z which preserves the distance between the rows, but with the variance of the columns in decreasing order. The second column is the second principal component, the third column is the third principal component, and so on. As in our example, if after a certain number of columns, say k, the variances of the columns of Z<sub>j</sub>, j > k are very small, it means these dimensions have little to contribute to the distance and we can approximate distance between any two points with just k dimensions. If k is much smaller than p, then we can achieve a very efficient summary of our data.
-* We can use the iris dataset to reduce dimensions, the data is ordered by the species. We can compute the distance between each observation and there are 3 species with 1 specie very different than the other 2:
-```r
-x <- iris[,1:4] %>% as.matrix()
-d <- dist(x)
-image(as.matrix(d), col = rev(RColorBrewer::brewer.pal(9, "RdBu")))
-```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/iris-distances-1.png" width = 300 height = 200>
-
-* The predictors have 4 dimensions and they're highly correlated:
-```r
-cor(x)
-#>              Sepal.Length Sepal.Width Petal.Length Petal.Width
-#> Sepal.Length        1.000      -0.118        0.872       0.818
-#> Sepal.Width        -0.118       1.000       -0.428      -0.366
-#> Petal.Length        0.872      -0.428        1.000       0.963
-#> Petal.Width         0.818      -0.366        0.963       1.000
-```
-* Applying PCA should allow us to approximate the distances with just 2 dimensions, compressing the highly correlated dimensions. Using the summary() function we can see the variability of each PC:
-```r
-pca <- prcomp(x)
-summary(pca)
-#> Importance of components:
-#>                          PC1    PC2    PC3     PC4
-#> Standard deviation     2.056 0.4926 0.2797 0.15439
-#> Proportion of Variance 0.925 0.0531 0.0171 0.00521
-#> Cumulative Proportion  0.925 0.9777 0.9948 1.00000
-```
-* The first two dimensions account for 97% of the variability. Thus we should be able to approximate the distance very well with two dimensions. We can visualize the results of PCA:
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/illustrate-pca-twin-heights-iris-1.png" width = 300 height = 300>
-
-* And see that the first pattern is sepal length, petal length, and petal width (red) in one direction and sepal width (blue) in the other. The second pattern is the sepal length and petal width in one direction (blue) and petal length and petal width in the other (red). You can see from the weights that the first PC1 drives most of the variability and it clearly separates the first third of samples (setosa) from the second two thirds (versicolor and virginica). If you look at the second column of the weights, you notice that it somewhat separates versicolor (red) from virginica (blue). We can see this better by plotting the first two PCs with color representing the species:
-```r
-data.frame(pca$x[,1:2], Species=iris$Species) %>% 
-  ggplot(aes(PC1,PC2, fill = Species))+
-  geom_point(cex=3, pch=21) +
-  coord_fixed(ratio = 1)
-```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/iris-pca-1.png" width = 500 height = 250>
-
-* The first 2 dimensions preserve distance:
-```r
-d_approx <- dist(pca$x[, 1:2])
-qplot(d, d_approx) + geom_abline(color="red")
-```
-<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/dist-approx-4-1.png" width = 300 height = 200>
-
-* Example Code with tissue_gene_expression data:
-```r
-# Load and explore data:
-library(dslabs)
-data("tissue_gene_expression")
-dim(tissue_gene_expression$x) # 189 principal components by 500 observations.
-# Use prcomp to create a PCA object:
-pca = prcomp(tissue_gene_expression$x)
-# Plot first 2 components with color representing tissue type:
-data.frame(pca_1 = pca$x[,1], pca_2 = pca$x[,2], 
-			tissue = tissue_gene_expression$y) %>%
-	ggplot(aes(pca_1, pca_2, color = tissue)) +
-	geom_point()
-```
-<strong>Recommendation Systems:</strong>
+Recommendation Systems:
 * *Recommendation systems* use ratings that users have given certain items to make specific recommendations to users. Very large companies, like Amazon, allow customers to rate their products which lets collect massive data sets that can be used to predict what rating a given user will give a specific item. Items which have higher ratings predicted for a specific user are recommended to that user. *Recommendation systems* are more complicated machine learning challenges because each outcome has a different set of predictors. For example, different users rate a different number of movies and rate different movies.. Check out the [Netflix Challenge](https://bits.blogs.nytimes.com/2009/09/21/netflix-awards-1-million-prize-and-starts-a-new-contest/) which was a challenge to find a better recommendation system ([dataset](https://www.kaggle.com/netflix-inc/netflix-prize-data), [detailed solution explanation](https://www.netflixprize.com/assets/GrandPrize2009_BPC_BellKor.pdf)).
 * We can use the movielens dataset which is another dataset of movie ratings from different users, ```data("movielens")```. The movielens table is in a tidy format and contains thousands of rows, ```head(movielens)```, each row represents 1 rating given by 1 user to a movie. We can see the number of unique users that provide ratings and for how many unique movies they provided:
 ```r
@@ -1666,7 +1501,7 @@ movielens %>% group_by(genres) %>%
 	geom_errorbar() + 
 	theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
-<strong>Regularization:</strong>
+Regularization:
 * *Regularization* can help improve our results even more and was 1 of the techniques used by the winner of the Netflix Challenge. Depsite the large movie to movie variation the improvement in RMSE when just the movie effect was included, was about 5%. Let's figure our why this wasn't bigger, see where we made mistakes in the 1st model (only using movies):
 ```r
 test_set %>% 
@@ -1923,6 +1758,171 @@ rmse <- sapply(a, function(a){
 })
 a[which.min(rmse)]
 ```
+Dimension Reduction:
+* A typical machine learning challenge will include a large number of predictors, which makes visualization somewhat challenging. For example, to compare each of the 784 features in our predicting digits example, we would have to create, for example, 306,936 scatterplots. Creating one single scatter-plot of the data is impossible due to the high dimensionality.
+* The general idea behind *dimension reduction* is to reduce the dimension of a dataset while preserving important features, like preserving the distrance between observations, visualization becomes feasible with fewer dimensions. Allowing this to happen is the *singular value decomposition*.
+* We'll use twin heights data (by simulating it) with pairs of adults and children. We can simulate 100 two-dimensional points representing the number of standard deviations each indivual is from the mean height (each point is a pair of twins). This can be done with the mvrnorm function from the MASS package to simulate bivariate normal data:
+```r
+set.seed(1988, sample.kind = "Rounding")
+library(MASS)
+# Set number of points to 100
+n <- 100
+Sigma <- matrix(c(9, 9 * 0.9, 9 * 0.92, 9 * 1), 2, 2)
+x <- rbind(mvrnorm(n / 2, c(69, 69), Sigma),
+           mvrnorm(n / 2, c(55, 55), Sigma))
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-illustration-1.png" width = 300 height = 300>
+
+* The correlation is pretty high and there are 2 groups of twins, the adults on top right points and the children on the bottom left points. We can reduce the dimensions down from 2 to 1 while keeping important characteristics, like the observations cluster into 2 groups. Specifically, we want an 1-dimensional summary of our predictors from which we can approximate the distance between any 2 observations. 
+* We can start with a naive approach of just approximating on 1 dimension and completley forgetting about the other:
+```r
+d <- dist(x) # Set d as the distance between all the points in x (the dataset).
+z <- x[,1] # Just using 1 dimension now (x[,1]).
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/one-dim-approx-to-dist-1.png" width = 300 height = 300>
+
+* The above is the approximate distances vs the original distances. The plot looks the same if we use the 2nd dimension and we obtain a general underestimation. This is to be expected since we're adding more positive quantaties in the distance calculation as we increase the number of dimensions. We can use the below equation to make the distance go way down:
+![\sqrt{ \frac{1}{2} \sum_{j=1}^2 (X_{i,j}-X_{i,j})^2 }](https://render.githubusercontent.com/render/math?math=%5Csqrt%7B%20%5Cfrac%7B1%7D%7B2%7D%20%5Csum_%7Bj%3D1%7D%5E2%20(X_%7Bi%2Cj%7D-X_%7Bi%2Cj%7D)%5E2%20%7D%2C)
+
+* And. we can divide the distance by √2 to get the correlation:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-approx-1-1.png" width = 300 height = 300>
+
+* We can find the typical distance: ```sd(dist(x) - dist(z)*sqrt(2))``` which is ~ 1.2. Looking at the previous scatterplot, we can see the distance of any 2 points would be the length of a line between them. We can plot the difference versus the average:
+```r
+z  <- cbind((x[,2] + x[,1])/2,  x[,2] - x[,1])
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/rotation-1.png" width = 300 height = 300>
+
+* The distance between the points is explained by the 1st dimension, the average. Which means we can ignore the 2nd dimension and not lose too much information. If the line is completely flat, we lose no information at all. Using the first dimension of this transformed matrix we obtain an even better approximation:
+```r
+sd(dist(x) - dist(z[,1])*sqrt(2)) # z[,1] is the 1st principal component of the matrix x.
+#> [1] 0.315
+# The typical difference improved by ~35%
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/distance-approx-1-1.png" width = 300 height = 300>
+
+* Notice, that each row of X was transformed using a linear trasnformation. For any row i, the 1st entry was: Z<sub>i, 1</sub> = a<sub>1, 1</sub> * X<sub>i, 1</sub> + a<sub>2, 1</sub> * X<sub>i, 2</sub> with a<sub>1, 1</sub> = 0.5 and a<sub>2, 1</sub> = 0.5. The second entry was, also, a linear transformation: Z<sub>i, 2</sub> = a<sub>1, 2</sub> * X<sub>i, 1</sub> + a<sub>2, 2</sub> * X<sub>i, 2</sub> with a<sub>1, 2</sub> = 1 and a<sub>2, 2</sub> = -1. 
+* The linear transformation can be reversed to obtain X from Z. The 1st entry is: X<sub>i, 1</sub> = b<sub>1, 1</sub> * Z<sub>i, 1</sub> + b<sub>2, 1</sub> * Z<sub>i, 2</sub> with b<sub>1, 1</sub> = 1 and b<sub>2, 1</sub> = 0.5. And, X<sub>i, 2</sub> = b<sub>1, 2</sub> * Z<sub>i, 1</sub> + b<sub>2, 2</sub> * Z<sub>i, 2</sub> with b<sub>1, 2</sub> = 1 and b<sub>2, 2</sub> = -0.5.
+* The above operations can be performed with linear algebra. The first operation would be written as:
+<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/matrix_1.PNG" width = 200 height = 40>
+
+* And, it can be transformed back by multiplying by A<sup>-1</sup>:
+<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/matrix_2.PNG" width = 200 height = 40>
+
+* Dimension reduction can often be described as applying a transformation A to a matrix X with many columns that moves the information contained in X to the first few columns of Z = AX, then keeping just these few informative columns, thus reducing the dimension of the vectors contained in the rows.
+* In the first example, we divided by √2 to account for the change from a 2 dimension distance to a 1 dimension distance. But, we can guaruntee the distance scales remain the same if the colums of A are re-scaled to assure the sum of squares is 1:
+![a_{1,1}^2 + a_{2,1}^2 = 1\mbox{ and }](https://render.githubusercontent.com/render/math?math=a_%7B1%2C1%7D%5E2%20%2B%20a_%7B2%2C1%7D%5E2%20%3D%201%5Cmbox%7B%20and%20%7D)
+and 
+![a_{1,2}^2 + a_{2,2}^2=1 ](https://render.githubusercontent.com/render/math?math=a_%7B1%2C2%7D%5E2%20%2B%20a_%7B2%2C2%7D%5E2%3D1%20). And, the correlation of the columns is 0:
+![a_{1,1} a_{1,2} + a_{2,1} a_{2,2} = 0.](https://render.githubusercontent.com/render/math?math=a_%7B1%2C1%7D%20a_%7B1%2C2%7D%20%2B%20a_%7B2%2C1%7D%20a_%7B2%2C2%7D%20%3D%200.)
+
+* Remember that if the columns are centered to have average 0, then the sum of squares is equivalent to the variance or standard deviation squared.
+* To achieve *orthogonality* in the 1st example we have to multiply the 1st set of coefficents (1st column of A) by √2 and the 2nd by 1/√2 so we have the same exact distances for both dimensions:
+```r
+z[,1] <- (x[,1] + x[,2]) / sqrt(2)
+z[,2] <- (x[,2] - x[,1]) / sqrt(2)
+# We get a transformation that preserves the distance between any 2 points:
+max(dist(z) - dist(x))
+#> [1] 3.24e-14
+# We, also, get an improved approximation if we use the 1st dimension:
+sd(dist(x) - dist(z[,1]))
+#> [1] 0.315
+```
+* In this case, Z is an orthogonal rotation of X: it preserves the distances between rows. By using the above transformation we can summarize the distance between any 2 pairs of twins with just 1 dimension. Plotting the 1 dimensional data, clearly shows their are 2 groups (adult and children) thus, the transformation preserves the distance:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/twins-pc-1-hist-1.png" width = 300 height = 200>
+
+* Loss of information was kept at a minimum as the dimensions were changed from 2 to 1. The reason this could happen was because the columns of X were very correlated: ```cor(x[,1], x[,2]) #Correlation was 0.988```. And, the transformation produced uncorrelated columns with "independent" information in each column: ```cor(z[,1], z[,2]) #Correlation is 0.0876```. One way this insight may be useful in a machine learning application is that we can reduce the complexity of a model by using just Z<sub>1</sub> rather than both  X<sub>1</sub> and X<sub>2</sub>.
+* It's common to obtain data with highly correlated predictors and *principal component analysis* (PCA) can be useful for reducing the complexity of the model being fit. From what we computed, up above, the total variability can be defined as the sum of the sum of squares of the columns. We assume the columns are centered, so this sum is equivalent to the sum of the variances of each column:
+![v_1 + v_2, \mbox{ with } v_1 = \frac{1}{N}\sum_{i=1}^N X_{i,1}^2 \mbox{ and } v_2 =  \frac{1}{N}\sum_{i=1}^N X_{i,2}^2](https://render.githubusercontent.com/render/math?math=v_1%20%2B%20v_2%2C%20%5Cmbox%7B%20with%20%7D%20v_1%20%3D%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C1%7D%5E2%20%5Cmbox%7B%20and%20%7D%20v_2%20%3D%20%20%5Cfrac%7B1%7D%7BN%7D%5Csum_%7Bi%3D1%7D%5EN%20X_%7Bi%2C2%7D%5E2)
+. We can compute v<sub>1</sub> and v<sub>2</sub> using: ```colMeans(x^2) #> [1] 3904 3902```. Also, we show that if we apply an orthogonal transformation the total variation remains the same: ```sum(colMeans(x^2)) #> [1] 7806 sum(colMeans(z^2)) #> [1] 7806```. But, in the transformed version (Z) 99% of the variability is in the 1st dimension while in the ogrinal version (X) the variability is distributed evenly across the dimensions.
+* The 1st *principal component* (PC) of a matrix (X) is the linear orthogonal transformation of X that maximizes the variability. The function prcomp provides this info:
+```r
+pca <- prcomp(x)
+pca$rotation
+#>         PC1    PC2
+#> [1,] -0.702  0.712
+#> [2,] -0.712 -0.702
+#Note that the first PC is almost the same as that provided by the (X1 + X2)/sqrt(2) used earlier except for, perhaps, an arbitrary sign change.
+```
+* The function PCA returns both the rotation needed to transform X so that the variability of the columns is decreasing from most variable to least (accessed with $rotation) as well as the resulting new matrix (accessed with $x). By default the columns of X are first centered. Using the matrix multiplcation, already discussed, the following are the same since the difference between elements is essentialy 0:
+```r
+a <- sweep(x, 2, colMeans(x)) 
+b <- pca$x %*% t(pca$rotation)
+max(abs(a - b))
+#> [1] 3.55e-15
+```
+* The rotation is orthogonal which means its inverse is its tranpose, so the following 2 are identical:
+```r
+a <- sweep(x, 2, colMeans(x)) %*% pca$rotation
+b <- pca$x 
+max(abs(a - b))
+#> [1] 0
+```
+* This can be visualized to see how the 1st component summarizes the data, red represents high values and blue negative values (these are called weights and patterns):
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/illustrate-pca-twin-heights-1.png" width = 300 height = 300>
+
+* This linear tranformation can be found for matricies of any dimension (p).
+* For a multidimensional matrix with X and p columns we can find the transformation that creates Z which preserves the distance between the rows, but with the variance of the columns in decreasing order. The second column is the second principal component, the third column is the third principal component, and so on. As in our example, if after a certain number of columns, say k, the variances of the columns of Z<sub>j</sub>, j > k are very small, it means these dimensions have little to contribute to the distance and we can approximate distance between any two points with just k dimensions. If k is much smaller than p, then we can achieve a very efficient summary of our data.
+* We can use the iris dataset to reduce dimensions, the data is ordered by the species. We can compute the distance between each observation and there are 3 species with 1 specie very different than the other 2:
+```r
+x <- iris[,1:4] %>% as.matrix()
+d <- dist(x)
+image(as.matrix(d), col = rev(RColorBrewer::brewer.pal(9, "RdBu")))
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/iris-distances-1.png" width = 300 height = 200>
+
+* The predictors have 4 dimensions and they're highly correlated:
+```r
+cor(x)
+#>              Sepal.Length Sepal.Width Petal.Length Petal.Width
+#> Sepal.Length        1.000      -0.118        0.872       0.818
+#> Sepal.Width        -0.118       1.000       -0.428      -0.366
+#> Petal.Length        0.872      -0.428        1.000       0.963
+#> Petal.Width         0.818      -0.366        0.963       1.000
+```
+* Applying PCA should allow us to approximate the distances with just 2 dimensions, compressing the highly correlated dimensions. Using the summary() function we can see the variability of each PC:
+```r
+pca <- prcomp(x)
+summary(pca)
+#> Importance of components:
+#>                          PC1    PC2    PC3     PC4
+#> Standard deviation     2.056 0.4926 0.2797 0.15439
+#> Proportion of Variance 0.925 0.0531 0.0171 0.00521
+#> Cumulative Proportion  0.925 0.9777 0.9948 1.00000
+```
+* The first two dimensions account for 97% of the variability. Thus we should be able to approximate the distance very well with two dimensions. We can visualize the results of PCA:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/illustrate-pca-twin-heights-iris-1.png" width = 300 height = 300>
+
+* And see that the first pattern is sepal length, petal length, and petal width (red) in one direction and sepal width (blue) in the other. The second pattern is the sepal length and petal width in one direction (blue) and petal length and petal width in the other (red). You can see from the weights that the first PC1 drives most of the variability and it clearly separates the first third of samples (setosa) from the second two thirds (versicolor and virginica). If you look at the second column of the weights, you notice that it somewhat separates versicolor (red) from virginica (blue). We can see this better by plotting the first two PCs with color representing the species:
+```r
+data.frame(pca$x[,1:2], Species=iris$Species) %>% 
+  ggplot(aes(PC1,PC2, fill = Species))+
+  geom_point(cex=3, pch=21) +
+  coord_fixed(ratio = 1)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/iris-pca-1.png" width = 500 height = 250>
+
+* The first 2 dimensions preserve distance:
+```r
+d_approx <- dist(pca$x[, 1:2])
+qplot(d, d_approx) + geom_abline(color="red")
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/dist-approx-4-1.png" width = 300 height = 200>
+
+* Example Code with tissue_gene_expression data:
+```r
+# Load and explore data:
+library(dslabs)
+data("tissue_gene_expression")
+dim(tissue_gene_expression$x) # 189 principal components by 500 observations.
+# Use prcomp to create a PCA object:
+pca = prcomp(tissue_gene_expression$x)
+# Plot first 2 components with color representing tissue type:
+data.frame(pca_1 = pca$x[,1], pca_2 = pca$x[,2], 
+			tissue = tissue_gene_expression$y) %>%
+	ggplot(aes(pca_1, pca_2, color = tissue)) +
+	geom_point()
+```
 Matrix Factorization:
 * *Matrix Factorization* is a widely used concept in machine learning that that's related to *factor analysis*, *singular value decomposition*, and *principal component analysis*.
 * Y<sub>u, i</sub> = μ + b<sub>i</sub> + b<sub>u</sub> + ϵ<sub>u, i</sub> has already been defined which accounts for movie to movie differences through b<sub>i</sub> and user to user differences through b<sub>u</sub>. But the model leaves out an important source of variation that groups of movies have similar rating patterns and groups of user have similar rating patterns. We can discover these patterns by studying the residuals obtained after fitting the model: r<sub>u, i</sub> = Y<sub>u, i</sub> - b̂<sub>i</sub> - b̂<sub>u</sub>. To study these residuals we can convert the data to a matrix so each user gets a row and each movie gets a column. We'll consider a small subset of the data with movies that have many ratings and users that have rated many movies:
@@ -2045,3 +2045,33 @@ cor(r)
 #> [2,] -0.5 0.5 0.5 0 0 0.5 0.5 0.5  0 -0.5 -0.5 -0.5
 ```
 * The new mode has more parameters, but still less than the original data: Y<sub>u, i</sub> = μ + b<sub>i</sub> + b<sub>u</sub> + p<sub>u, 1</sub>q<sub>1, i</sub> + p<sub>u, 2</sub>q<sub>2, i</sub> + ϵ<sub>u, i</sub>. And, we can fit this model with, like the least squares method. But, for the Netflix Challenge they used regularization and penalize not just user and movie effects but large values of the factors p or q. We need to find the structure using the acutal data which can be accomplished via pca or svd. 
+* The matrix factorization decomposition, shown up above, is similar to singular value decomposition and pca. 
+* One way to think of *singular value decomposition* is as an algorithm that finds vectors p and q that permits us to write the matrix of residuals, r with m rows and n columns as (variability of terms is decrasing and p's are unccorelated to each other): r<sub>u, i</sub> = p<sub>u, 1</sub>q<sub>1, i</sub> + p<sub>u, 2</sub>q<sub>2, i</sub> + ... + p<sub>u, m</sub>q<sub>m, i</sub>. Also, the algorithm computes these varaibilites so we can know how much of the matrix's total variability is explained as new terms are added. This may allows us to see with just a few terms we can explain most of the varaibility. We can see an example with the movie data (to compute the decomposition all NA's we be 0):
+```r
+# Convert NA's:
+y[is.na(y)] <- 0
+y <- sweep(y, 1, rowMeans(y))
+pca <- prcomp(y)
+# The vectors q are called principal components and stored in the below matrix (454 * 292):
+dim(pca$rotation)
+# The p vectors are called the user effects and stored in the below matrix (292 * 292):
+dim(pca$x)
+# The pca returns a component with the varaibility of each of the principal components and can be plotted:
+plot(pca$sdev)
+```
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/pca-sds-1.png" width = 300 height = 200>
+
+* Note: user effects are stored as pca$x and principal components are stored as pca$rotation. Also, we can see that just with a few of the PC's (principal components) we explained a large percentage of the data:
+```r
+var_explained <- cumsum(pca$sdev^2/sum(pca$sdev^2))
+plot(var_explained)
+```
+<img src = "https://github.com/BOLTZZ/R/blob/master/Images%26GIFs/few_explained.PNG" width = 300 height = 200>
+
+* With just 50 principal components, out of 300, we're explaining about half the variability. To show the principal components are actually capturing something important about the data we can make a plot of the first 2 PC's and label the points with the movie they're related to:
+<img src = "https://rafalab.github.io/dsbook/book_files/figure-html/movies-pca-1.png" width = 300 height = 200>
+
+* Just by looking at the top 3 points in each direction we see meaningful patterns. T
+* The first PC shows difference between critically acclaimed movies one 1 side and Hollywood blockbusters on the other side. Since the PC1 is on the x-axis for the graph, the graph has critically acclaimed movies on 1 side and blockbusters on the other, it's seperating out movies that have structure adn determening users that like these movies over others and vice versa. 
+* The second PC, also, captures structure in the data. Looking at 1 extreme of the 2nd PC we see artsy independent films while looking at the other side shows nerd favorites. 
+* Using pca we've seen that a matrix factorization approach can find important structure in the data. To fit the matrix factorization model, shown earlier, that takes into account missing data can be accomplished with the recommenderlab package since it fits these type of models.
