@@ -164,3 +164,47 @@ Properties:
   As the number of n draws increases the SE becomes very small (since there is more data to estimate on). Once, n is very large the SE is practically 0 and the average of the draws converges to the average of the dataset.
 
 * The CLT only applies to only approximately normaly distributed datasets. Also, the number of values needed can vary to only 10 to as large as 1 million. And, the chance of succes can't be that small for the CLT (to use CLT in R use pnorm()). The Poisson distribution would be better in these cases.
+* Example Code With SAT Testing:
+```r
+# An old version of the SAT college entrance exam had a -0.25 point penalty for every incorrect answer and awarded 1 point for a correct # answer. The quantitative test consisted of 44 multiple-choice questions each with 5 answer choices. Suppose a student chooses answers # by guessing for all questions on the test.
+# The probability of guessing a question correctly is 0.5:
+p = 0.5
+# What is the expected value of points for guessing on one question?
+a <- 1
+b <- -0.25
+mu <- a*p + b*(1-p) # mu = 0
+# What is the expected score of guessing on all 44 questions?
+n <- 44 # 44 questions
+n*mu # 0
+# What is the standard error of guessing on all 44 questions?
+sigma <- sqrt(n) * abs(b-a) * sqrt(p*(1-p)) # 3.32
+# Use the Central Limit Theorem to determine the probability that a guessing student scores 8 points or higher on the test.
+1-pnorm(8, mu, sigma) # 0.00793
+# Set the seed to 21, then run a Monte Carlo simulation of 10,000 students guessing on the test.
+set.seed(21, sample.kind = "Rounding")
+B <- 10000
+n <- 44
+p <- 0.2
+tests <- replicate(B, {
+  X <- sample(c(1, -0.25), n, replace = TRUE, prob = c(p, 1-p))
+  sum(X)
+})
+# What is the probability that a guessing student scores 8 points or higher?
+mean(tests >= 8) # 0.008
+# The SAT was recently changed to reduce the number of multiple choice options from 5 to 4 and also to eliminate the penalty for guessing.
+# Suppose that the number of multiple choice options is 4 and that there is no penalty for guessing - that is, an incorrect question gives a score of 0.
+# What is the expected value of the score when guessing on this new test?
+p <- 1/4
+a <- 1
+b <- 0
+n <- 44
+mu <- n * a*p + b*(1-p) # 11
+# Consider a range of correct answer probabilities p <- seq(0.25, 0.95, 0.05) representing a range of student skills. What is the lowest p such that the probability of scoring over 35 exceeds 80%?
+p <- seq(0.25, 0.95, 0.05)
+exp_val <- sapply(p, function(x){
+  mu <- n * a*x + b*(1-x)
+  sigma <- sqrt(n) * abs(b-a) * sqrt(x*(1-x))
+  1-pnorm(35, mu, sigma)
+})
+min(p[which(exp_val > 0.8)]) # 0.85
+```
