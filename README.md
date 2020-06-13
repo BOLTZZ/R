@@ -5,13 +5,15 @@ R is a statistical programming language used for a wide array of things in stati
 # Check out my repos. on programming languages:
 1. [Java](https://github.com/BOLTZZ/Java)
 
-2. [Python](https://github.com/BOLTZZ/Python)
+2. [C](https://github.com/BOLTZZ/C) 
 
-3. [HTML & CSS](https://github.com/BOLTZZ/HTML-CSS)
+3. [Python](https://github.com/BOLTZZ/Python)
 
-4. [Javascript](https://github.com/BOLTZZ/Javascript)
+4. [HTML & CSS](https://github.com/BOLTZZ/HTML-CSS)
 
-5. [R](https://github.com/BOLTZZ/R)
+5. [Javascript](https://github.com/BOLTZZ/Javascript)
+
+6. [R](https://github.com/BOLTZZ/R)
 # Table of Contents:
 | R
 | ---
