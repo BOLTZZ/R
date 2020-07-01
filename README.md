@@ -17,7 +17,9 @@ R is a statistical programming language used for a wide array of things in stati
 # Table of Contents:
 | R
 | ---
+| [How To Get Started Guide - Get started with R](https://github.com/BOLTZZ/R/blob/master/How%20To%20Get%20Started%20Guide.md)
 | [R Fundamentals - Learn!](https://github.com/BOLTZZ/R/tree/master/R%20Fundamentals)
 | [R Projects - See some cool stuff!](https://github.com/BOLTZZ/R/tree/master/R%20Projects)
 | [Git Basic Commands - Basic commands using Git](https://github.com/BOLTZZ/R/blob/master/Git%20Basics%20Commands.md)
+| [Unix - The Unix Shell explained](https://github.com/BOLTZZ/R/blob/master/Unix.md)
 | [Images & GIFs - Images and GIFs for your eyes to feast on!](https://github.com/BOLTZZ/R/tree/master/Images%26GIFs)
