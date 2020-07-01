@@ -19,4 +19,5 @@ R is a statistical programming language used for a wide array of things in stati
 | ---
 | [R Fundamentals - Learn!](https://github.com/BOLTZZ/R/tree/master/R%20Fundamentals)
 | [R Projects - See some cool stuff!](https://github.com/BOLTZZ/R/tree/master/R%20Projects)
+| [Git Basic Commands - Basic commands using Git](https://github.com/BOLTZZ/R/blob/master/Git%20Basics%20Commands.md)
 | [Images & GIFs - Images and GIFs for your eyes to feast on!](https://github.com/BOLTZZ/R/tree/master/Images%26GIFs)
