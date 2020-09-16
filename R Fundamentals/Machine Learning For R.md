@@ -1,5 +1,5 @@
 *Note: Check out [data science functions](https://github.com/BOLTZZ/R/blob/master/R%20Fundamentals/R%20Basics%20&%20Syntax.md#import-data-gathering-functions) for data science related functions.*
-# Machine Learning:
+# Machine Learning For R:
 * Machine learning is based on algorithms built by data. Unlike, Artificial Intelligence (AI) which implements decision making based on programmable rules derived from theory.
 
 <strong>Intro. to Machine Learning:</strong>
